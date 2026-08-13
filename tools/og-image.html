@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #FBF7F2;
+      --emerald: #1B6B4A;
+      --gold: #C8985E;
+      --muted: #6B6B6B;
+    }
+
+    body { background: #fff; }
+
+    /* Exactly 1200x630 — the Open Graph / Twitter summary_large_image size. */
+    .og {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background: var(--cream);
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* The same 45°/-45° geometric wash the hero uses, at the same 4% emerald.
+       DESIGN.md caps decorative pattern at 5-8% opacity; this matches the page
+       rather than inventing a second treatment. */
+    .og::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(45deg, rgba(27,107,74,0.04) 0px, rgba(27,107,74,0.04) 1px, transparent 1px, transparent 20px),
+        repeating-linear-gradient(-45deg, rgba(27,107,74,0.04) 0px, rgba(27,107,74,0.04) 1px, transparent 1px, transparent 20px);
+    }
+
+    .content { position: relative; padding: 0 90px; }
+
+    .icon {
+      width: 132px;
+      height: 132px;
+      border-radius: 32px;
+      display: block;
+      margin: 0 auto 34px;
+      box-shadow: 0 10px 40px rgba(27,107,74,0.18);
+    }
+
+    h1 {
+      font-size: 62px;
+      font-weight: 700;
+      color: var(--emerald);
+      letter-spacing: -1px;
+      line-height: 1.14;
+      max-width: 900px;
+      margin: 0 auto 24px;
+    }
+
+    .rule {
+      width: 64px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--gold);
+      margin: 0 auto 24px;
+    }
+
+    p {
+      font-size: 27px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="og">
+    <div class="content">
+      <img class="icon" src="../assets/logo.png" alt="" />
+      <h1>Your daily moment of Islamic reflection</h1>
+      <div class="rule"></div>
+      <p>Discover a Name of Allah, receive a personal dua, and deepen your connection &mdash; every day.</p>
+    </div>
+  </div>
+</body>
+</html>

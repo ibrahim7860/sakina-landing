@@ -26,8 +26,8 @@
  * The anon key this posts with is public by design — it is the same key already
  * shipped inside every IPA, and `waitlist_signups` has RLS on with no policies
  * and no grants, so the key can call `join_waitlist` and cannot read a single
- * row back. (SamieBelal/Sakina is a public repo: never put the service-role key
- * anywhere near this file.)
+ * row back. (This repo is public — that is the whole reason it exists, so Pages
+ * can serve it. Never put the service-role key anywhere near this file.)
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {

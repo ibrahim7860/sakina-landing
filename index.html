@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sakina — Islamic Wellness</title>
   <meta name="description" content="Your daily moment of Islamic reflection. Discover a Name of Allah, receive a personal dua, and deepen your connection — every day." />
+
+  <!-- Link previews. This page is distributed by being pasted: an Instagram
+       bio, a reel caption, an iMessage thread. Without these it unfurls as a
+       bare URL with no title, image, or description, which is most people's
+       first impression of the app. og:image MUST be absolute — crawlers do not
+       resolve relative paths — so it is pinned to the Pages origin and has to
+       be updated together with any custom domain. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Sakina" />
+  <meta property="og:url" content="https://ibrahim7860.github.io/sakina-landing/" />
+  <meta property="og:title" content="Sakina — Your daily moment of Islamic reflection" />
+  <meta property="og:description" content="Discover a Name of Allah, receive a personal dua, and deepen your connection — every day." />
+  <meta property="og:image" content="https://ibrahim7860.github.io/sakina-landing/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Sakina — your daily moment of Islamic reflection" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Sakina — Your daily moment of Islamic reflection" />
+  <meta name="twitter:description" content="Discover a Name of Allah, receive a personal dua, and deepen your connection — every day." />
+  <meta name="twitter:image" content="https://ibrahim7860.github.io/sakina-landing/assets/og-image.png" />
+
+  <link rel="canonical" href="https://ibrahim7860.github.io/sakina-landing/" />
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -453,8 +475,9 @@
     // the same token already shipped inside every IPA via --dart-define, and
     // it can only append events, never read them. It is committed here because
     // this file is served as a static page with no build step to substitute it.
-    // (SamieBelal/Sakina is a public repo: treat this as published, and never
-    // put the Mixpanel API SECRET or a service-role key anywhere near it.)
+    // (This repo is public — that is the whole reason it exists, so Pages can
+    // serve it. Treat anything here as published, and never put the Mixpanel
+    // API SECRET or a service-role key anywhere near it.)
     //
     // Everything below is wrapped so a blocker, an old browser, or a failed
     // script load can never stand between a visitor and the App Store.
