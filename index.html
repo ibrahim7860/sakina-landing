@@ -192,6 +192,26 @@
       color: var(--muted);
     }
 
+    /* Sits under the badges for Android visitors. Deliberately lighter than
+       the badges above it — a hairline and muted copy, not a second hero —
+       so it reads as the fallback it is rather than a rival call to action. */
+    .hero-waitlist {
+      margin-top: 26px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(27,107,74,0.13);
+      width: 100%;
+      max-width: 420px;
+      margin-inline: auto;
+    }
+
+    .hero-waitlist[hidden] { display: none; }
+
+    .hero-waitlist-note {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
     /* SCREENS — real captures, not illustrations */
     .screens {
       background: var(--emerald);
@@ -651,6 +671,26 @@
           <span class="soon-tag">Coming soon</span>
         </div>
       </div>
+
+      <!-- Shown to Android visitors only, by the script at the foot of this
+           file. They are the one group the hero currently offers nothing to:
+           the App Store button does not apply to them and the Play badge is
+           deliberately dead, so without this their only move is to leave.
+           It stays hidden for iPhone visitors on purpose — they CAN install,
+           and an email field beside the install button competes with the only
+           action on this page that earns anything. Hidden by default, so a
+           blocked script or a missing app-redirect.js falls back to everyone
+           using the section further down rather than nobody seeing a form. -->
+      <div class="hero-waitlist" id="hero-waitlist" hidden>
+        <p class="hero-waitlist-note">On Android? Join the waitlist</p>
+        <form class="notify-form" data-channel="hero" onsubmit="handleNotify(event)">
+          <label class="sr-only" for="hero-notify-email">Your email address</label>
+          <input id="hero-notify-email" name="email" type="email" placeholder="your@email.com"
+                 autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" required />
+          <button type="submit" class="notify-btn">Notify Me</button>
+        </form>
+        <p class="notify-status" role="status" aria-live="polite" hidden></p>
+      </div>
     </div>
   </section>
 
@@ -754,7 +794,7 @@
   <section class="android-banner">
     <h2>Android is on its way</h2>
     <p>Want to know when it's ready? Leave your email and we'll let you know.</p>
-    <form class="notify-form" onsubmit="handleNotify(event)">
+    <form class="notify-form" data-channel="android_note" onsubmit="handleNotify(event)">
       <label class="sr-only" for="notify-email">Your email address</label>
       <!-- autocomplete + inputmode are what give iOS the autofill bar and the
            @-key keyboard. Nearly all of this page's traffic is mobile, and this
@@ -836,6 +876,35 @@
       }
     })();
 
+    // ── Hero waitlist, hidden only from people who can install ───────────
+    // The gate is `isIOS`, NOT `isAndroid`, because platform sniffing is a
+    // heuristic and the two mistakes cost wildly different amounts.
+    //
+    // isAndroid is a substring test for "Android" in the user agent, so it
+    // misses a real Android visitor who tapped "Request desktop site" (the UA
+    // becomes X11; Linux x86_64) or who browses with a UA-spoofing privacy
+    // browser. Gating on it hid the form from exactly the people it exists
+    // for. Gating on isIOS instead means an undetectable visitor still gets
+    // it — and the copy asks "On Android?", so anyone it does not apply to
+    // simply does not answer.
+    //
+    // So: a miss costs an Android visitor their only action; a false positive
+    // costs an iPhone visitor one ignorable line. Fail toward showing.
+    //
+    // Its own block rather than folded into the analytics glue above: that
+    // one returns early when SakinaLandingAnalytics is missing, so sharing its
+    // scope would let an ad-blocker eating Mixpanel hide the form too.
+    //
+    // Still hidden by default in the markup: the form needs JS to submit, so
+    // with scripts off it is better absent than present and inert.
+    (function () {
+      var box = document.getElementById('hero-waitlist');
+      if (!box) return;
+      var R = window.AppRedirect;
+      if (R && R.isIOS()) return;
+      box.hidden = false;
+    })();
+
     // ── Android waitlist ─────────────────────────────────────────────────
     // The Supabase ANON key, like the Mixpanel token above, is public by
     // design — it is the same key already shipped inside every IPA. It is
@@ -863,7 +932,12 @@
       var form = e.target;
       var input = form.querySelector('input');
       var button = form.querySelector('button');
-      var status = document.querySelector('.notify-status');
+      // Scoped to this form's own container, not the document. There are two
+      // waitlist forms now, and a document-wide lookup would post the hero
+      // form's result into the status line of the section further down the
+      // page, where whoever submitted it cannot see it.
+      var status = form.parentNode.querySelector('.notify-status');
+      var channel = form.getAttribute('data-channel') || 'android_note';
       var email = input.value;
 
       function say(outcome) {
@@ -884,7 +958,7 @@
           // leak them even by accident.
           if (A) {
             A.track(A.EVENTS.waitlist, {
-              channel: 'android_note',
+              channel: channel,
               outcome: outcome
             });
           }
