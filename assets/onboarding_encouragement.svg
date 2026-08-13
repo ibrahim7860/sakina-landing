@@ -1,0 +1,53 @@
+<svg width="240" height="220" viewBox="0 0 240 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Large soft background circle -->
+  <circle cx="120" cy="110" r="100" fill="#E8F5EE"/>
+
+  <!-- Light rays emanating from lantern — symmetrical -->
+  <line x1="120" y1="72" x2="120" y2="56" stroke="#C8985E" stroke-width="1.5" opacity="0.45" stroke-linecap="round"/>
+  <line x1="104" y1="76" x2="96" y2="62" stroke="#C8985E" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>
+  <line x1="136" y1="76" x2="144" y2="62" stroke="#C8985E" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>
+  <line x1="90" y1="88" x2="78" y2="80" stroke="#C8985E" stroke-width="1" opacity="0.25" stroke-linecap="round"/>
+  <line x1="150" y1="88" x2="162" y2="80" stroke="#C8985E" stroke-width="1" opacity="0.25" stroke-linecap="round"/>
+
+  <!-- Lantern hook at top -->
+  <path d="M116 82 C116 76, 120 74, 120 74 C120 74, 124 76, 124 82" stroke="#1B6B4A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <line x1="120" y1="74" x2="120" y2="68" stroke="#1B6B4A" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Lantern top cap -->
+  <path d="M108 86 L132 86 L128 82 L112 82Z" fill="#1B6B4A" opacity="0.2" stroke="#1B6B4A" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- Lantern body — elegant tapered shape -->
+  <path d="M108 86 L104 130 C104 138, 110 142, 120 142 C130 142, 136 138, 136 130 L132 86" fill="#C8985E" opacity="0.1" stroke="#1B6B4A" stroke-width="1.8" stroke-linejoin="round"/>
+
+  <!-- Lantern glass panels (vertical lines) -->
+  <line x1="112" y1="90" x2="110" y2="136" stroke="#1B6B4A" stroke-width="0.8" opacity="0.3"/>
+  <line x1="120" y1="86" x2="120" y2="142" stroke="#1B6B4A" stroke-width="0.8" opacity="0.3"/>
+  <line x1="128" y1="90" x2="130" y2="136" stroke="#1B6B4A" stroke-width="0.8" opacity="0.3"/>
+
+  <!-- Horizontal band across middle -->
+  <path d="M105 112 L135 112" stroke="#1B6B4A" stroke-width="1" opacity="0.25"/>
+
+  <!-- Warm glow inside lantern -->
+  <ellipse cx="120" cy="112" rx="10" ry="14" fill="#C8985E" opacity="0.2"/>
+  <!-- Flame -->
+  <path d="M118 116 C118 108, 120 104, 120 102 C120 104, 122 108, 122 116 C122 119, 120 120, 120 120 C120 120, 118 119, 118 116Z" fill="#C8985E" opacity="0.7"/>
+
+  <!-- Lantern bottom cap -->
+  <path d="M104 130 C104 138, 110 142, 120 142 C130 142, 136 138, 136 130" fill="none" stroke="#1B6B4A" stroke-width="1.8"/>
+  <!-- Bottom finial -->
+  <line x1="120" y1="142" x2="120" y2="148" stroke="#1B6B4A" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="120" cy="150" r="2" fill="#1B6B4A"/>
+
+  <!-- Sparkle accents — symmetrical pairs -->
+  <!-- Top-left -->
+  <path d="M68 92 L70 86 L72 92 L78 94 L72 96 L70 102 L68 96 L62 94Z" fill="#C8985E"/>
+  <!-- Top-right (mirrored) -->
+  <path d="M168 92 L170 86 L172 92 L178 94 L172 96 L170 102 L168 96 L162 94Z" fill="#C8985E" opacity="0.7"/>
+  <!-- Bottom-left -->
+  <path d="M76 160 L77 157 L78 160 L81 161 L78 162 L77 165 L76 162 L73 161Z" fill="#C8985E" opacity="0.4"/>
+  <!-- Bottom-right (mirrored) -->
+  <path d="M162 160 L163 157 L164 160 L167 161 L164 162 L163 165 L162 162 L159 161Z" fill="#C8985E" opacity="0.4"/>
+
+  <!-- Crescent — above lantern, right of center -->
+  <path d="M134 60 C140 64, 143 72, 141 80 C139 86, 134 88, 130 88 C136 84, 138 76, 136 68 C135 64, 134 62, 134 60Z" fill="#C8985E" opacity="0.5"/>
+</svg>

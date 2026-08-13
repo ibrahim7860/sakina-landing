@@ -1,0 +1,77 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trophy/achievement badge with Islamic patterns -->
+  <g id="trophy">
+    <!-- Trophy cup -->
+    <path d="M75 100 L75 120 Q75 135 90 140 L130 140 Q145 135 145 120 L145 100 Z" fill="#C8985E" opacity="0.9"/>
+
+    <!-- Trophy base -->
+    <rect x="95" y="140" width="30" height="8" rx="2" fill="#C8985E" opacity="0.8"/>
+    <rect x="85" y="148" width="50" height="6" rx="3" fill="#C8985E" opacity="0.8"/>
+
+    <!-- Trophy handles -->
+    <path d="M75 105 Q60 105 55 115 Q55 120 60 120 L70 120" stroke="#C8985E" stroke-width="3" fill="none" opacity="0.8" stroke-linecap="round"/>
+    <path d="M145 105 Q160 105 165 115 Q165 120 160 120 L150 120" stroke="#C8985E" stroke-width="3" fill="none" opacity="0.8" stroke-linecap="round"/>
+
+    <!-- Islamic geometric pattern on trophy -->
+    <circle cx="110" cy="115" r="8" fill="none" stroke="#1B6B4A" stroke-width="1.5" opacity="0.3"/>
+    <path d="M110 107 L113 112 L118 112 L114 116 L116 121 L110 118 L104 121 L106 116 L102 112 L107 112 Z" fill="#1B6B4A" opacity="0.3"/>
+
+    <!-- Ribbon on trophy -->
+    <path d="M90 100 L90 95 Q95 90 110 90 Q125 90 130 95 L130 100" fill="#1B6B4A" opacity="0.7"/>
+    <circle cx="110" cy="92" r="4" fill="#FBF7F2"/>
+  </g>
+
+  <!-- Streak flame with glow -->
+  <g id="flame">
+    <!-- Outer glow -->
+    <ellipse cx="110" cy="65" rx="25" ry="30" fill="#F59E0B" opacity="0.15"/>
+
+    <!-- Main flame -->
+    <path d="M110 40 Q105 50 105 60 Q105 68 110 70 Q115 68 115 60 Q115 50 110 40 Z" fill="#F59E0B" opacity="0.8"/>
+
+    <!-- Inner flame detail -->
+    <path d="M110 48 Q108 54 108 60 Q108 64 110 65 Q112 64 112 60 Q112 54 110 48 Z" fill="#FEF3C7" opacity="0.9"/>
+  </g>
+
+  <!-- Stars/sparkles celebrating -->
+  <g id="stars">
+    <!-- Large stars -->
+    <path d="M50 60 L52 65 L57 65 L53 69 L55 74 L50 71 L45 74 L47 69 L43 65 L48 65 Z" fill="#C8985E" opacity="0.6"/>
+    <path d="M170 60 L172 65 L177 65 L173 69 L175 74 L170 71 L165 74 L167 69 L163 65 L168 65 Z" fill="#C8985E" opacity="0.6"/>
+
+    <!-- Small sparkles -->
+    <circle cx="65" cy="45" r="2" fill="#F59E0B" opacity="0.5"/>
+    <circle cx="155" cy="45" r="2" fill="#F59E0B" opacity="0.5"/>
+    <circle cx="45" cy="90" r="1.5" fill="#C8985E" opacity="0.4"/>
+    <circle cx="175" cy="90" r="1.5" fill="#C8985E" opacity="0.4"/>
+    <circle cx="70" cy="140" r="1.5" fill="#C8985E" opacity="0.4"/>
+    <circle cx="150" cy="140" r="1.5" fill="#C8985E" opacity="0.4"/>
+
+    <!-- Plus signs for extra sparkle -->
+    <g opacity="0.4">
+      <line x1="35" y1="75" x2="35" y2="80" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="32.5" y1="77.5" x2="37.5" y2="77.5" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+
+      <line x1="185" y1="75" x2="185" y2="80" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="182.5" y1="77.5" x2="187.5" y2="77.5" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Decorative Islamic arch frame -->
+  <g id="arch-frame" opacity="0.12">
+    <!-- Arch -->
+    <path d="M60 165 L60 180 Q60 185 65 185 L155 185 Q160 185 160 180 L160 165 Q160 160 155 160 L110 160 L65 160 Q60 160 60 165" stroke="#C8985E" stroke-width="2" fill="none"/>
+
+    <!-- Arch top decoration -->
+    <circle cx="110" cy="157" r="4" fill="none" stroke="#C8985E" stroke-width="1.5"/>
+  </g>
+
+  <!-- Radiating success lines -->
+  <g id="rays" opacity="0.15">
+    <line x1="110" y1="55" x2="110" y2="25" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="110" y1="55" x2="95" y2="30" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="110" y1="55" x2="125" y2="30" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="110" y1="55" x2="80" y2="40" stroke="#C8985E" stroke-width="1" stroke-linecap="round"/>
+    <line x1="110" y1="55" x2="140" y2="40" stroke="#C8985E" stroke-width="1" stroke-linecap="round"/>
+  </g>
+</svg>

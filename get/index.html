@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Opening Sakina&hellip;</title>
+<meta name="description" content="Redirecting to the Sakina app." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Aref+Ruqaa:wght@400;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F3E9;
+    --emerald: #0F5B41;
+    --emerald-dim: #143E31;
+    --gold: #C7A248;
+    --ink: #1B2420;
+    --ink-soft: #3A3F3A;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--emerald-dim);
+    background: radial-gradient(120% 120% at 50% 0%, var(--emerald) 0%, var(--emerald-dim) 70%);
+    font-family: 'Lora', Georgia, serif;
+    color: var(--cream);
+  }
+  .wrap {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    font-family: 'Aref Ruqaa', 'Amiri', Georgia, serif;
+    font-size: 30px;
+    color: var(--emerald);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  h1 {
+    font-family: 'Aref Ruqaa', 'Amiri', Georgia, serif;
+    font-weight: 700;
+    font-size: 26px;
+    margin: 0 0 10px;
+    letter-spacing: 0.01em;
+  }
+  #status {
+    font-size: 15px;
+    color: rgba(247,243,233,0.82);
+    margin: 0 0 26px;
+    min-height: 20px;
+    transition: opacity .2s ease;
+  }
+  .spinner {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(247,243,233,0.35);
+    border-top-color: var(--gold);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 18px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #manual-action {
+    display: none;
+  }
+  #manual-action.visible {
+    display: block;
+    animation: fade-in .25s ease;
+  }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+  .ar-btn {
+    display: inline-block;
+    min-width: 220px;
+    padding: 14px 26px;
+    border-radius: 12px;
+    background: var(--cream);
+    color: var(--emerald);
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  }
+  .steps {
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    color: rgba(247,243,233,0.7);
+    max-width: 280px;
+  }
+  .steps li { margin-bottom: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    .spinner { animation: none; border-top-color: var(--gold); }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark" aria-hidden="true">&#9770;</div>
+    <h1>Opening Sakina</h1>
+    <div class="spinner" id="spinner" aria-hidden="true"></div>
+    <p id="status">Taking you to the App&nbsp;Store&hellip;</p>
+
+    <div id="manual-action">
+      <a class="ar-btn" id="manual-btn" href="#">Open App Store</a>
+      <ul class="steps" id="manual-steps"></ul>
+    </div>
+  </div>
+
+  <script src="../src/app-redirect.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // ------------------------------------------------------------------
+    // Per-project config
+    // ------------------------------------------------------------------
+    var IOS_STORE_URL = AppRedirect.CONFIG.ios.storeUrl;
+    var HOMEPAGE_URL = 'https://ibrahim7860.github.io/sakina-landing/';
+
+    // Per-channel attribution links (AppsFlyer OneLink / Branch / etc).
+    // None were provided, so this stays empty and every branch below
+    // falls back to the raw store URL with no beacon, per spec.
+    // Fill in like: { instagram: 'https://xxx.onelink.me/abc/ig', tiktok: '...' }
+    var ATTRIBUTION_LINKS = {
+      // instagram: 'https://xxx.onelink.me/abc/ig',
+      // tiktok: 'https://xxx.onelink.me/abc/tt',
+      // facebook: 'https://xxx.onelink.me/abc/fb',
+      default: IOS_STORE_URL // neutral default — never a specific channel
+    };
+
+    function attributionLinkFor(channel) {
+      if (channel && Object.prototype.hasOwnProperty.call(ATTRIBUTION_LINKS, channel)) {
+        return ATTRIBUTION_LINKS[channel];
+      }
+      return ATTRIBUTION_LINKS.default;
+    }
+
+    function getChannel() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('src');
+    }
+
+    var statusEl = document.getElementById('status');
+    var spinnerEl = document.getElementById('spinner');
+    var manualWrap = document.getElementById('manual-action');
+    var manualBtn = document.getElementById('manual-btn');
+    var manualSteps = document.getElementById('manual-steps');
+
+    function showManualFallback(targetUrl) {
+      spinnerEl.style.display = 'none';
+      statusEl.textContent = 'Tap below to continue.';
+      manualBtn.setAttribute('data-store-url', targetUrl);
+      manualBtn.setAttribute('href', targetUrl);
+      AppRedirect.bindElement(manualBtn);
+
+      var steps = [];
+      if (AppRedirect.isIOS() && AppRedirect.isInstagramInApp()) {
+        steps = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in external browser\u201d'];
+      } else if (AppRedirect.isIOS() && AppRedirect.isFacebookInApp()) {
+        steps = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in Safari\u201d'];
+      }
+      manualSteps.innerHTML = steps.map(function (s) { return '<li>' + s + '</li>'; }).join('');
+      manualWrap.classList.add('visible');
+    }
+
+    function armFallbackTimer(targetUrl, delayMs) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        showManualFallback(targetUrl);
+      }, delayMs);
+
+      function onSignal() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+      }
+      function cleanup() {
+        document.removeEventListener('visibilitychange', onSignal);
+        window.removeEventListener('pagehide', onSignal);
+        window.removeEventListener('blur', onSignal);
+      }
+      document.addEventListener('visibilitychange', onSignal);
+      window.addEventListener('pagehide', onSignal);
+      window.addEventListener('blur', onSignal);
+    }
+
+    function run() {
+      var channel = getChannel();
+      var attributionLink = attributionLinkFor(channel);
+
+      // Desktop -> homepage, no store attempt.
+      var isMobile = AppRedirect.isIOS() || AppRedirect.isAndroid();
+      if (!isMobile) {
+        window.location.replace(HOMEPAGE_URL);
+        return;
+      }
+
+      // iOS Instagram/Threads: zero-prompt path. Beacon first (best-effort,
+      // matched probabilistically), then escape with the RAW store URL —
+      // NOT the attribution link — since a tracking redirect would trigger
+      // the "Open in App Store?" confirmation prompt instead of opening
+      // silently.
+      if (AppRedirect.isIOS() && AppRedirect.isInstagramInApp()) {
+        try {
+          fetch(attributionLink, { mode: 'no-cors', keepalive: true }).catch(function () {});
+        } catch (e) {
+          // fetch unavailable or blocked — beacon is best-effort only.
+        }
+        armFallbackTimer(IOS_STORE_URL, 1800);
+        location.href = 'instagram://extbrowser/?url=' + encodeURIComponent(IOS_STORE_URL);
+        return;
+      }
+
+      // Android, or any other non-IG mobile browser (incl. iOS Facebook/
+      // Messenger): a plain server-redirect reaches the store fine here.
+      // (On iOS Facebook/Messenger specifically, Meta's block on
+      // apps.apple.com navigation means this attempt silently no-ops and
+      // the 1.8s timer below correctly falls through to the manual
+      // button — whose click *does* have the user gesture that the
+      // x-safari- escape requires.)
+      armFallbackTimer(attributionLink, 1800);
+      window.location.replace(attributionLink);
+    }
+
+    run();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sakina — Islamic Wellness</title>
+  <meta name="description" content="Your daily moment of Islamic reflection. Discover a Name of Allah, receive a personal dua, and deepen your connection — every day." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #FBF7F2;
+      --emerald: #1B6B4A;
+      --emerald-light: #2a8560;
+      --gold: #C8985E;
+      --text: #1A1A1A;
+      --muted: #6B6B6B;
+      --card-bg: #FFFFFF;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      padding: 20px 40px;
+      background: var(--cream);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(27,107,74,0.08);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    .nav-brand span {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--emerald);
+      letter-spacing: -0.3px;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 90px 40px 80px;
+      text-align: center;
+      background: var(--cream);
+    }
+
+    /* Islamic geometric pattern background */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(45deg, rgba(27,107,74,0.04) 0px, rgba(27,107,74,0.04) 1px, transparent 1px, transparent 20px),
+        repeating-linear-gradient(-45deg, rgba(27,107,74,0.04) 0px, rgba(27,107,74,0.04) 1px, transparent 1px, transparent 20px);
+      pointer-events: none;
+    }
+
+    .hero-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      margin: 0 auto 28px;
+      display: block;
+      box-shadow: 0 8px 32px rgba(27,107,74,0.18);
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      color: var(--emerald);
+      max-width: 680px;
+      margin: 0 auto 20px;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      font-weight: 400;
+    }
+
+    .cta-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .appstore-btn {
+      display: inline-block;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .appstore-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    .appstore-btn img {
+      height: 52px;
+    }
+
+    .android-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* PREVIEW */
+    .preview {
+      background: var(--emerald);
+      padding: 70px 40px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 24px),
+        repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 24px);
+      pointer-events: none;
+    }
+
+    .preview-label {
+      text-align: center;
+      width: 100%;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .preview img, .preview object {
+      max-width: 280px;
+      width: 100%;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--cream);
+      display: block;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 80px 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .features h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      color: var(--emerald);
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
+    }
+
+    .features > p {
+      color: var(--muted);
+      margin-bottom: 52px;
+      font-size: 1rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-align: left;
+      box-shadow: 0 2px 16px rgba(27,107,74,0.07);
+      border-top: 3px solid var(--gold);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(27,107,74,0.12);
+    }
+
+    .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--emerald);
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ANDROID BANNER */
+    .android-banner {
+      background: #EDF5F0;
+      border-top: 1px solid rgba(27,107,74,0.12);
+      border-bottom: 1px solid rgba(27,107,74,0.12);
+      padding: 56px 40px;
+      text-align: center;
+    }
+
+    .android-banner h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--emerald);
+      margin-bottom: 10px;
+    }
+
+    .android-banner p {
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 1rem;
+    }
+
+    .notify-form {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* `display: flex` above outranks the UA stylesheet's `[hidden]` rule, so
+       without this the form stays on screen after a successful signup. */
+    .notify-form[hidden] {
+      display: none;
+    }
+
+    .notify-form input {
+      padding: 13px 18px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(27,107,74,0.2);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      background: white;
+      color: var(--text);
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .notify-form input:focus {
+      border-color: var(--emerald);
+    }
+
+    .notify-form input::placeholder {
+      color: #aaa;
+    }
+
+    .notify-btn {
+      padding: 13px 24px;
+      background: var(--emerald);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .notify-btn:hover {
+      background: var(--emerald-light);
+      transform: translateY(-1px);
+    }
+
+    .notify-btn[disabled] {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
+    }
+
+    .notify-status {
+      margin-top: 16px;
+      font-size: 0.95rem;
+      min-height: 1.4em;
+    }
+
+    .notify-status.is-ok { color: var(--emerald); font-weight: 600; }
+    .notify-status.is-bad { color: #b3261e; }
+
+    /* FOOTER */
+    footer {
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      background: var(--cream);
+    }
+
+    footer img {
+      height: 28px;
+      opacity: 0.6;
+    }
+
+    footer p {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    footer a:hover {
+      color: var(--emerald);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .hero { padding: 60px 24px 60px; }
+      .preview { padding: 50px 24px; gap: 20px; }
+      .preview img, .preview object { max-width: 100%; }
+      .features { padding: 60px 24px; }
+      .android-banner { padding: 48px 24px; }
+      footer { padding: 32px 24px; }
+      .notify-form input { width: 100%; }
+      .notify-form { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <img src="assets/logo.png" alt="Sakina" />
+      <span>Sakina</span>
+    </a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <img class="hero-icon" src="assets/logo.png" alt="Sakina app icon" />
+    <h1>Your daily moment of Islamic reflection</h1>
+    <p>Discover a Name of Allah, receive a personal dua, and deepen your connection — every day.</p>
+    <div class="cta-group">
+      <a class="appstore-btn" href="https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820" target="_blank" rel="noopener">
+        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
+      </a>
+      <span class="android-note">Android coming soon</span>
+    </div>
+  </section>
+
+  <!-- APP PREVIEW -->
+  <section class="preview">
+    <div class="preview-label">See it in action</div>
+    <img src="assets/onboarding_encouragement.svg" alt="Sakina app — daily reflection" />
+    <img src="assets/daily_complete.svg" alt="Sakina app — Names of Allah" />
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <h2>Everything you need to stay connected</h2>
+    <p>Simple, beautiful, and built with intention.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">✨</div>
+        <h3>Daily Names of Allah</h3>
+        <p>Each day reveals a new Name and its meaning, drawn from the 99 Beautiful Names of Allah.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤲</div>
+        <h3>Personal Duas</h3>
+        <p>Receive a dua tailored to your heart's state — in Arabic with translation and transliteration.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌙</div>
+        <h3>Gentle Reflection</h3>
+        <p>A short, guided muhasabah to help you check in with yourself and your Creator every day.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANDROID BANNER -->
+  <section class="android-banner">
+    <h2>Android is on its way</h2>
+    <p>Want to know when it's ready? Leave your email and we'll let you know.</p>
+    <form class="notify-form" onsubmit="handleNotify(event)">
+      <input type="email" placeholder="your@email.com" required />
+      <button type="submit" class="notify-btn">Notify Me</button>
+    </form>
+    <p class="notify-status" role="status" aria-live="polite" hidden></p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <img src="assets/sakina_mark.png" alt="Sakina" />
+    <p>© 2026 Sakina. Made with intention.</p>
+    <a href="#">Privacy Policy</a>
+  </footer>
+
+  <script src="src/landing-analytics.js"></script>
+  <script src="src/app-redirect.js"></script>
+  <script src="src/waitlist.js"></script>
+  <script>
+    // ── Landing telemetry ────────────────────────────────────────────────
+    // The Mixpanel PROJECT token is write-only and public by design — it is
+    // the same token already shipped inside every IPA via --dart-define, and
+    // it can only append events, never read them. It is committed here because
+    // this file is served as a static page with no build step to substitute it.
+    // (SamieBelal/Sakina is a public repo: treat this as published, and never
+    // put the Mixpanel API SECRET or a service-role key anywhere near it.)
+    //
+    // Everything below is wrapped so a blocker, an old browser, or a failed
+    // script load can never stand between a visitor and the App Store.
+    (function () {
+      var A = window.SakinaLandingAnalytics;
+      if (!A) return;
+      A.init('750c5e73f30c504033a9d0534006e140');
+
+      var R = window.AppRedirect;
+
+      function platform() {
+        if (!R) return 'other';
+        return R.isIOS() ? 'ios' : R.isAndroid() ? 'android' : 'other';
+      }
+
+      // The escape's own outcome signals, forwarded from app-redirect.js.
+      if (R) {
+        R.CONFIG.onEvent = function (name, props) {
+          if (name === 'redirect_attempted') {
+            A.track(A.EVENTS.redirectAttempted, props);
+          } else if (name === 'redirect_failed') {
+            A.track(A.EVENTS.redirectFailed, props);
+          }
+        };
+      }
+
+      A.track(A.EVENTS.viewed, { platform: platform() });
+
+      var storeLinks = document.querySelectorAll('a.appstore-btn');
+      for (var i = 0; i < storeLinks.length; i++) {
+        storeLinks[i].addEventListener('click', function () {
+          // Fired on every Store tap, in-app browser or not — this is the
+          // conversion denominator, so it must not depend on the escape path.
+          A.track(A.EVENTS.storeCta, {
+            platform: platform(),
+            channel: 'hero',
+            in_app_browser:
+              R && R.isInAppBrowser()
+                ? (R.isInstagramInApp() ? 'instagram' : 'facebook')
+                : 'none'
+          });
+        });
+      }
+    })();
+
+    // ── Android waitlist ─────────────────────────────────────────────────
+    // The Supabase ANON key, like the Mixpanel token above, is public by
+    // design — it is the same key already shipped inside every IPA. It is
+    // safe here specifically because `waitlist_signups` has RLS on with no
+    // policies and no grants: this key can call `join_waitlist` and cannot
+    // read a single row back. The SERVICE-ROLE key must never appear here.
+    (function () {
+      var W = window.SakinaWaitlist;
+      if (!W) return;
+      W.init({
+        url: 'https://smhvsqrxqoehqncphjrq.supabase.co',
+        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaHZzcXJ4cW9laHFuY3BoanJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODI3MDYsImV4cCI6MjA5MTE1ODcwNn0.O3uHbbD4NhTVWJVdQFIg0OIGhfzYHRc9Tz4o2EAh05Y'
+      });
+    })();
+
+    var NOTIFY_MESSAGES = {
+      joined: "You're on the list. We'll email you when Android is ready.",
+      invalid: 'That email doesn’t look right — mind checking it?',
+      error: 'Something went wrong. Please try again in a moment.'
+    };
+
+    function handleNotify(e) {
+      e.preventDefault();
+
+      var form = e.target;
+      var input = form.querySelector('input');
+      var button = form.querySelector('button');
+      var status = document.querySelector('.notify-status');
+      var email = input.value;
+
+      function say(outcome) {
+        if (!status) return;
+        status.textContent = NOTIFY_MESSAGES[outcome] || NOTIFY_MESSAGES.error;
+        status.className =
+          'notify-status ' + (outcome === 'joined' ? 'is-ok' : 'is-bad');
+        status.hidden = false;
+      }
+
+      function done(outcome) {
+        try {
+          var A = window.SakinaLandingAnalytics;
+          // The EMAIL is never sent — only that the intent happened, and how
+          // it ended. The whole point of the allow-list in
+          // landing-analytics.js is that a call site like this one — the only
+          // one on the page that actually holds a person's address — cannot
+          // leak them even by accident.
+          if (A) {
+            A.track(A.EVENTS.waitlist, {
+              channel: 'android_note',
+              outcome: outcome
+            });
+          }
+        } catch (_) { /* analytics never breaks the form */ }
+
+        say(outcome);
+
+        if (outcome === 'joined') {
+          // Retire the form rather than invite a second identical submission
+          // that the server would silently dedupe anyway.
+          form.hidden = true;
+        } else {
+          button.disabled = false;
+          button.textContent = 'Notify Me';
+        }
+      }
+
+      var W = window.SakinaWaitlist;
+      if (!W) { done('error'); return; }
+
+      button.disabled = true;
+      button.textContent = 'Joining…';
+      W.submit(email).then(done);
+    }
+  </script>
+
+</body>
+</html>

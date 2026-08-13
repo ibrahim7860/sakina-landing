@@ -1,0 +1,26 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  landing-tests:
+    runs-on: ubuntu-latest
+    # These suites cover the in-app-browser escape system and its telemetry —
+    # the riskiest path on the page, because it fails silently by nature and
+    # its only other evidence is App Store installs.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # node:test is built in — no install step, no lockfile, no dependencies.
+      #
+      # Explicit file glob, NOT the bare `tests/` directory. Node 20 scans a
+      # directory argument; Node 22 (this job) treats it as a single file to
+      # execute, so `node --test tests/` fails with MODULE_NOT_FOUND on the
+      # directory itself and reports "1 test, 1 fail" without ever running the
+      # suite. The glob behaves identically on both.
+      - name: Run landing / app-redirect tests
+        run: node --test tests/*.test.js
