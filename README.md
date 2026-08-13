@@ -7,6 +7,27 @@ This repo is public only so GitHub Pages can serve it. The app itself lives in
 the private `SamieBelal/Sakina` repo; nothing here is imported by the app at
 runtime.
 
+## The link to put in a bio
+
+```
+https://ibrahim7860.github.io/sakina-landing/get/?src=instagram
+```
+
+**Mind the `/get/`.** That segment is the whole point — it is the page that
+escapes Instagram's in-app browser and opens the App Store. The homepage with
+the same query string looks almost identical and never redirects anywhere, so
+pasting it by mistake costs every install and looks fine while doing it. The
+homepage now forwards iPhone visitors who arrive with a `?src=` to `/get/` as a
+safety net, but publish the `/get/` URL.
+
+Change `src` per channel — `?src=tiktok`, `?src=youtube` — so each account
+reports separately in Mixpanel. Any value works; it is recorded, not validated.
+
+The final check can only be done on a real phone: tap the link **inside actual
+Instagram** and confirm you land in the App Store with no prompt. The
+`extbrowser` escape is undocumented Meta behaviour and can break in an app
+update, which is why the fallback button on `/get/` is not optional.
+
 ## Layout
 
 | Path | What it is |

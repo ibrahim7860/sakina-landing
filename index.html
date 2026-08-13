@@ -888,6 +888,35 @@
       }
     })();
 
+    // ── Campaign link safety net ─────────────────────────────────────────
+    // The bio link is /get/?src=<channel>. The homepage carrying the same
+    // ?src= is one path segment away and trivial to paste by mistake, and the
+    // mistake is invisible: this page renders perfectly and simply never sends
+    // anyone to the App Store, so every tap from the bio quietly fails to
+    // install. An iPhone visitor arriving here with a campaign tag is almost
+    // certainly that mistake — /get/ only ever hands people back to this page
+    // when they are NOT on iOS. So forward them to the page that escapes.
+    //
+    // Loop-free by construction, and that pairing is the reason: /get/ returns
+    // desktop and Android visitors here, and this guard fires for iOS only.
+    // Nothing can bounce between the two.
+    //
+    // This is a net, not a replacement. /get/?src= stays the link to publish:
+    // it is built to redirect, with a spinner and a fallback button, where
+    // this page would flash its full hero first.
+    (function () {
+      var R = window.AppRedirect;
+      if (!R || !R.isIOS()) return;
+      var src;
+      try {
+        src = new URLSearchParams(location.search).get('src');
+      } catch (e) {
+        return;
+      }
+      if (!src) return;
+      location.replace('get/?src=' + encodeURIComponent(src));
+    })();
+
     // ── Hero waitlist, hidden only from people who can install ───────────
     // The gate is `isIOS`, NOT `isAndroid`, because platform sniffing is a
     // heuristic and the two mistakes cost wildly different amounts.
