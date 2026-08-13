@@ -145,6 +145,7 @@
     </div>
   </div>
 
+  <script src="../src/landing-analytics.js"></script>
   <script src="../src/app-redirect.js"></script>
   <script>
   (function () {
@@ -179,6 +180,81 @@
       return params.get('src');
     }
 
+    /**
+     * Homepage URL carrying the channel forward. Everyone this page hands to
+     * the homepage — desktop, and Android until there is an Android build —
+     * would otherwise arrive anonymous, and those are the visitors most likely
+     * to join the waitlist. Keeping ?src= means a bio tap stays attributable
+     * all the way to the signup.
+     */
+    function homeWithChannel(channel) {
+      if (!channel) return HOMEPAGE_URL;
+      return HOMEPAGE_URL + '?src=' + encodeURIComponent(channel);
+    }
+
+    // ------------------------------------------------------------------
+    // Telemetry
+    // ------------------------------------------------------------------
+    // This page had none. It loaded app-redirect.js but never wired
+    // CONFIG.onEvent (only the homepage did), so the escape — the riskiest
+    // thing on the site, the whole reason this page exists, and the one
+    // path that fails silently by design — reported nothing at all. Mixpanel
+    // showed a single landing_redirect_attempted in 180 days, and that came
+    // from the homepage button. Installs were a numerator with no
+    // denominator: no way to tell a broken escape from a bad ad.
+    //
+    // It also made ?src= decorative. The bio link carries one src per channel
+    // precisely so channels report separately; without this, the value was
+    // read, used to pick an attribution link, and thrown away.
+    //
+    // Everything below is best-effort and must never delay or block the
+    // redirect. landing-analytics.js sends via navigator.sendBeacon (falling
+    // back to a keepalive fetch), which is what survives this page navigating
+    // away milliseconds later.
+    var A = window.SakinaLandingAnalytics || null;
+    if (A) {
+      try {
+        A.init('750c5e73f30c504033a9d0534006e140');
+      } catch (e) {
+        A = null;
+      }
+    }
+
+    function inAppBrowser() {
+      if (!AppRedirect.isInAppBrowser()) return 'none';
+      return AppRedirect.isInstagramInApp() ? 'instagram' : 'facebook';
+    }
+
+    function platform() {
+      return AppRedirect.isIOS() ? 'ios' : AppRedirect.isAndroid() ? 'android' : 'other';
+    }
+
+    /** Never let a telemetry failure stand between a visitor and the store. */
+    function track(name, props) {
+      if (!A) return;
+      try {
+        A.track(name, props);
+      } catch (e) { /* swallowed on purpose */ }
+    }
+
+    // The escape's own outcome signals. Forwarded with the channel attached so
+    // a failure can be read per source — an escape that breaks for Instagram
+    // is the case worth catching, and Instagram is where the traffic is.
+    AppRedirect.CONFIG.onEvent = function (name, props) {
+      var enriched = {
+        channel: getChannel() || 'none',
+        platform: platform(),
+        in_app_browser: inAppBrowser()
+      };
+      if (props && props.outcome) enriched.outcome = props.outcome;
+
+      if (name === 'redirect_attempted') {
+        track(A && A.EVENTS.redirectAttempted, enriched);
+      } else if (name === 'redirect_failed') {
+        track(A && A.EVENTS.redirectFailed, enriched);
+      }
+    };
+
     var statusEl = document.getElementById('status');
     var spinnerEl = document.getElementById('spinner');
     var manualWrap = document.getElementById('manual-action');
@@ -208,6 +284,18 @@
         if (settled) return;
         settled = true;
         cleanup();
+        // The signal worth having above all others: the automatic escape ran
+        // and the app never switched, so this visitor is looking at a manual
+        // button instead of the App Store. Silent by nature — no error, no
+        // console, nothing. Reported as redirect_failed with the channel, so
+        // "Instagram broke the extbrowser trick again" is visible here rather
+        // than inferred weeks later from a dip in installs.
+        track(A && A.EVENTS.redirectFailed, {
+          channel: getChannel() || 'none',
+          platform: platform(),
+          in_app_browser: inAppBrowser(),
+          outcome: 'fallback_shown'
+        });
         showManualFallback(targetUrl);
       }, delayMs);
 
@@ -231,10 +319,35 @@
       var channel = getChannel();
       var attributionLink = attributionLinkFor(channel);
 
+      // Fired here, before any branch below navigates away. sendBeacon hands
+      // the request to the browser to deliver independently of this document,
+      // so it survives the redirect that follows on the very next lines — a
+      // plain fetch would be cancelled with the page.
+      //
+      // `channel` is the denominator the escape never had: taps that arrived
+      // from the Instagram bio, against redirect_attempted and
+      // redirect_failed from the same source.
+      track(A && A.EVENTS.viewed, {
+        channel: channel || 'none',
+        platform: platform(),
+        in_app_browser: inAppBrowser()
+      });
+
       // Desktop -> homepage, no store attempt.
       var isMobile = AppRedirect.isIOS() || AppRedirect.isAndroid();
       if (!isMobile) {
-        window.location.replace(HOMEPAGE_URL);
+        window.location.replace(homeWithChannel(channel));
+        return;
+      }
+
+      // Android before there is an Android build. The attribution map's
+      // neutral default is the iOS store URL, so this visitor was being
+      // dropped on an App Store page for an app they cannot install —
+      // from the bio link, which in these markets is mostly Android.
+      // Send them to the homepage instead, where the hero offers them the
+      // waitlist. A dead end becomes the one action they can take.
+      if (AppRedirect.isAndroid() && !AppRedirect.CONFIG.android.packageName) {
+        window.location.replace(homeWithChannel(channel));
         return;
       }
 

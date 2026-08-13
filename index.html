@@ -857,7 +857,19 @@
         };
       }
 
-      A.track(A.EVENTS.viewed, { platform: platform() });
+      // channel comes from ?src=, which /get/ forwards when it hands a visitor
+      // here — desktop, and Android until there is an Android build. Without
+      // reading it, every one of those arrivals is anonymous, and they are the
+      // ones most likely to join the waitlist rather than install.
+      function channel() {
+        try {
+          return new URLSearchParams(location.search).get('src') || 'none';
+        } catch (e) {
+          return 'none';
+        }
+      }
+
+      A.track(A.EVENTS.viewed, { platform: platform(), channel: channel() });
 
       var storeLinks = document.querySelectorAll('a.appstore-btn');
       for (var i = 0; i < storeLinks.length; i++) {
