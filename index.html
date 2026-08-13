@@ -282,6 +282,52 @@
       line-height: 1.55;
     }
 
+    /* Swipe-deck position indicator. Hidden at the 3-up breakpoint, where all
+       three screens are on show and there is nothing to indicate. */
+    .screen-dots {
+      display: none;
+      position: relative;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      margin-top: 20px;
+    }
+
+    .screen-dot {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* The dot is drawn on the pseudo-element so the button itself can stay a
+       comfortable tap target without a 34px blob of colour. */
+    .screen-dot::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.36);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .screen-dot[aria-current="true"]::before {
+      background: #fff;
+      transform: scale(1.3);
+    }
+
+    .screen-dot:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.8);
+      outline-offset: -6px;
+      border-radius: 50%;
+    }
+
 
     /* FEATURES */
     .features {
@@ -511,27 +557,47 @@
 
     /* RESPONSIVE */
 
-    /* Below the 3-up breakpoint the phones scroll sideways instead of stacking.
-       Stacked, three of them cost about a screen and a half of vertical scroll —
-       the exact dead zone the old illustration block created. The partly visible
-       third card is what signals the row scrolls. */
+    /* Below the 3-up breakpoint the phones become a one-at-a-time swipe deck.
+       Stacking them was never an option: three full-height phones cost about a
+       screen and a half of vertical scroll, which is the dead zone the old
+       illustration block created.
+
+       An earlier pass sized each slide `62%, max 260px`. On a 543px-wide phone
+       that put slide two at x=306 running to x=566 — past the edge — so it
+       showed as a sliver with its caption sheared mid-word. Each slide is now
+       exactly one track wide, so a screenshot is either wholly on screen or
+       not on screen at all, at every width. */
     @media (max-width: 899px) {
       .screen-grid {
         display: flex;
-        gap: 22px;
+        gap: 0;
         overflow-x: auto;
+        overscroll-behavior-x: contain;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         margin-inline: -40px;
-        padding: 4px 40px 10px;
+        padding: 4px 0 0;
       }
+
       .screen-grid::-webkit-scrollbar { display: none; }
+
       .screen {
-        flex: 0 0 62%;
-        max-width: 260px;
+        flex: 0 0 100%;
         scroll-snap-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-inline: 40px;
       }
+
+      .phone { width: 100%; max-width: 248px; }
+
+      .screen figcaption { max-width: 340px; }
+
+      /* With no neighbour peeking in, these are the only thing saying there
+         are two more screens to the right. */
+      .screen-dots { display: flex; }
     }
 
     @media (max-width: 600px) {
@@ -543,7 +609,10 @@
       .store-row { gap: 10px; }
       .screens { padding: 56px 24px 62px; }
       .screens-head { margin-bottom: 34px; }
-      .screen-grid { margin-inline: -24px; padding: 4px 24px 10px; }
+      /* Negative margin has to match the section's padding at each breakpoint,
+         or the track stops being exactly one viewport wide and the snap drifts. */
+      .screen-grid { margin-inline: -24px; }
+      .screen { padding-inline: 24px; }
       .features { padding: 60px 24px; }
       .android-banner { padding: 48px 24px; }
       footer { padding: 32px 24px; }
@@ -631,6 +700,11 @@
           <span>Every reflection and dua stays in your journal.</span>
         </figcaption>
       </figure>
+    </div>
+    <div class="screen-dots">
+      <button type="button" class="screen-dot" aria-current="true" aria-label="Show screen 1 of 3"></button>
+      <button type="button" class="screen-dot" aria-current="false" aria-label="Show screen 2 of 3"></button>
+      <button type="button" class="screen-dot" aria-current="false" aria-label="Show screen 3 of 3"></button>
     </div>
   </section>
 
@@ -835,6 +909,74 @@
       button.textContent = 'Joining…';
       W.submit(email).then(done);
     }
+
+    // ── Screens swipe deck ───────────────────────────────────────────────
+    // Keeps the dots in step with where the deck has been scrolled, and lets
+    // them scroll it. Progressive enhancement only: with this script blocked
+    // the deck is still a plain scroll-snap container you can swipe, and the
+    // dots simply stop tracking. Nothing here gates seeing a screenshot.
+    //
+    // Timers below are called bare, never window-prefixed. landing-globals
+    // greps this file for window-dot-name reads and asserts each one is a
+    // global some loaded module publishes; a prefixed timer call fails it.
+    // That grep does not skip comments, so naming one here would fail it too.
+    (function () {
+      var deck = document.querySelector('.screen-grid');
+      var dots = [].slice.call(document.querySelectorAll('.screen-dot'));
+      if (!deck || !dots.length) return;
+
+      var settle;
+      var current = 0;
+
+      function sync() {
+        // clientWidth, not slide width: each slide is exactly one track wide.
+        var per = deck.clientWidth;
+        if (!per) return;
+        var i = Math.round(deck.scrollLeft / per);
+        if (i < 0) i = 0;
+        if (i > dots.length - 1) i = dots.length - 1;
+        current = i;
+        for (var n = 0; n < dots.length; n++) {
+          dots[n].setAttribute('aria-current', n === i ? 'true' : 'false');
+        }
+      }
+
+      deck.addEventListener('scroll', function () {
+        clearTimeout(settle);
+        settle = setTimeout(sync, 60);
+      }, { passive: true });
+
+      for (var n = 0; n < dots.length; n++) {
+        (function (index) {
+          dots[index].addEventListener('click', function () {
+            var left = deck.clientWidth * index;
+            // scrollTo on the deck, never scrollIntoView — the latter also
+            // yanks the page vertically to bring the slide into view.
+            var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (deck.scrollTo) {
+              deck.scrollTo({ left: left, behavior: calm ? 'auto' : 'smooth' });
+            } else {
+              deck.scrollLeft = left;
+            }
+          });
+        })(n);
+      }
+
+      // Scroll offset is in pixels, so a rotation or window drag leaves the
+      // deck parked between two slides — half of one screenshot beside half of
+      // another, which is the mess this deck replaced. Re-anchor to whichever
+      // slide was showing, measured against the NEW track width.
+      addEventListener('resize', function () {
+        clearTimeout(settle);
+        settle = setTimeout(function () {
+          var per = deck.clientWidth;
+          if (per) deck.scrollLeft = current * per;
+          sync();
+        }, 120);
+      }, { passive: true });
+
+      sync();
+    })();
   </script>
 
 </body>
