@@ -52,8 +52,9 @@
    *  in_app_browser  — which in-app webview, or 'none'
    *  channel         — which surface on the page (hero, footer, …)
    *  outcome         — what happened ('opened', 'blocked', 'timeout', …)
+   *  reel            — the Instagram media id from /get/?r=, or 'none'
    */
-  var ALLOWED_PROPS = ['platform', 'in_app_browser', 'channel', 'outcome'];
+  var ALLOWED_PROPS = ['platform', 'in_app_browser', 'channel', 'outcome', 'reel'];
 
   /** A bounded key with an unbounded value is still unbounded. */
   var MAX_VALUE_CHARS = 64;
