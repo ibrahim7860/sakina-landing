@@ -53,6 +53,7 @@ test('properties are bounded — unknown keys are dropped', () => {
     in_app_browser: 'instagram',
     channel: 'hero',
     outcome: 'opened',
+    reel: '17947645578337196',
     // Everything below must NOT survive: free text and anything that
     // could carry a person.
     email: 'someone@example.com',
@@ -64,6 +65,7 @@ test('properties are bounded — unknown keys are dropped', () => {
   assert.equal(payload.properties.in_app_browser, 'instagram');
   assert.equal(payload.properties.channel, 'hero');
   assert.equal(payload.properties.outcome, 'opened');
+  assert.equal(payload.properties.reel, '17947645578337196');
   assert.equal(payload.properties.email, undefined);
   assert.equal(payload.properties.referrerUrl, undefined);
   assert.equal(payload.properties.note, undefined);

@@ -146,6 +146,7 @@
   </div>
 
   <script src="../src/landing-analytics.js"></script>
+  <script src="../src/campaign-link.js"></script>
   <script src="../src/app-redirect.js"></script>
   <script>
   (function () {
@@ -154,7 +155,12 @@
     // ------------------------------------------------------------------
     // Per-project config
     // ------------------------------------------------------------------
-    var IOS_STORE_URL = AppRedirect.CONFIG.ios.storeUrl;
+    // Per-reel Campaign Link when the DM link carried ?r=<instagram media id>;
+    // otherwise the raw store URL, exactly as before. Both are direct
+    // apps.apple.com links, so the extbrowser escape below is unchanged.
+    var C = window.SakinaCampaignLink || null;
+    var REEL_ID = C ? C.reelIdFrom(window.location.search) : null;
+    var IOS_STORE_URL = (C && C.campaignStoreUrl(REEL_ID)) || AppRedirect.CONFIG.ios.storeUrl;
     var HOMEPAGE_URL = 'https://ibrahim7860.github.io/sakina-landing/';
 
     // Per-channel attribution links (AppsFlyer OneLink / Branch / etc).
@@ -244,7 +250,8 @@
       var enriched = {
         channel: getChannel() || 'none',
         platform: platform(),
-        in_app_browser: inAppBrowser()
+        in_app_browser: inAppBrowser(),
+        reel: REEL_ID || 'none'
       };
       if (props && props.outcome) enriched.outcome = props.outcome;
 
@@ -294,7 +301,8 @@
           channel: getChannel() || 'none',
           platform: platform(),
           in_app_browser: inAppBrowser(),
-          outcome: 'fallback_shown'
+          outcome: 'fallback_shown',
+          reel: REEL_ID || 'none'
         });
         showManualFallback(targetUrl);
       }, delayMs);
@@ -330,7 +338,8 @@
       track(A && A.EVENTS.viewed, {
         channel: channel || 'none',
         platform: platform(),
-        in_app_browser: inAppBrowser()
+        in_app_browser: inAppBrowser(),
+        reel: REEL_ID || 'none'
       });
 
       // Desktop -> homepage, no store attempt.
