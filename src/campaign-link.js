@@ -27,7 +27,7 @@
   var APP_ID = '6762153820';
 
   // Public by design: it appears in every campaign link Apple generates.
-  var PROVIDER_TOKEN = 'PASTE_PT_FROM_TASK_0';
+  var PROVIDER_TOKEN = '128715313';
 
   // Apple caps a campaign token at 40 characters. Letters, digits and '-'
   // only: a strict subset of what Apple accepts, so nothing here ever needs
