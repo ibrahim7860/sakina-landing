@@ -268,6 +268,29 @@
     var manualBtn = document.getElementById('manual-btn');
     var manualSteps = document.getElementById('manual-steps');
 
+    // Inside Instagram on iOS, the escape below does not leave silently: Instagram
+    // shows its own sheet — "This web page is trying to open an app outside of
+    // Instagram. Open / Cancel" — and while that sheet is up the page gets no
+    // visibilitychange, pagehide or blur. With a 1.8s timer the page declared
+    // failure while the visitor was still reading the sheet: it logged
+    // redirect_failed (about 3 in 4 Instagram iPhone visits in the first boost)
+    // and painted "use the ••• menu" instructions behind a sheet whose Open button
+    // works fine (verified on a real iPhone, 2026-10-06). So inside Instagram the
+    // page names the button the visitor is actually looking at, offers its own
+    // button in case they tap Cancel, and waits long enough for a person to read
+    // before calling it a failure.
+    var IG_PROMPT_GRACE_MS = 12000;
+
+    function showOpenPrompt(targetUrl) {
+      spinnerEl.style.display = 'none';
+      statusEl.textContent = 'Tap \u201cOpen\u201d to continue to the App Store.';
+      manualBtn.setAttribute('data-store-url', targetUrl);
+      manualBtn.setAttribute('href', targetUrl);
+      AppRedirect.bindElement(manualBtn);
+      manualSteps.innerHTML = '';
+      manualWrap.classList.add('visible');
+    }
+
     function showManualFallback(targetUrl) {
       spinnerEl.style.display = 'none';
       statusEl.textContent = 'Tap below to continue.';
@@ -360,18 +383,22 @@
         return;
       }
 
-      // iOS Instagram/Threads: zero-prompt path. Beacon first (best-effort,
-      // matched probabilistically), then escape with the RAW store URL —
-      // NOT the attribution link — since a tracking redirect would trigger
-      // the "Open in App Store?" confirmation prompt instead of opening
-      // silently.
+      // iOS Instagram/Threads: beacon first (best-effort, matched
+      // probabilistically), then escape with the RAW store URL — NOT the
+      // attribution link — since a tracking redirect would add an "Open in App
+      // Store?" prompt on top of Instagram's own "open an app outside of
+      // Instagram?" sheet (see IG_PROMPT_GRACE_MS). One tap on Open, not zero.
       if (AppRedirect.isIOS() && AppRedirect.isInstagramInApp()) {
         try {
           fetch(attributionLink, { mode: 'no-cors', keepalive: true }).catch(function () {});
         } catch (e) {
           // fetch unavailable or blocked — beacon is best-effort only.
         }
-        armFallbackTimer(IOS_STORE_URL, 1800);
+        // The manual button's own retry hits the same sheet, so it gets the same
+        // grace instead of app-redirect.js's default.
+        AppRedirect.CONFIG.escapeTimeoutMs = Math.max(AppRedirect.CONFIG.escapeTimeoutMs, IG_PROMPT_GRACE_MS);
+        showOpenPrompt(IOS_STORE_URL);
+        armFallbackTimer(IOS_STORE_URL, IG_PROMPT_GRACE_MS);
         location.href = 'instagram://extbrowser/?url=' + encodeURIComponent(IOS_STORE_URL);
         return;
       }

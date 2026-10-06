@@ -24,7 +24,9 @@ Change `src` per channel — `?src=tiktok`, `?src=youtube` — so each account
 reports separately in Mixpanel. Any value works; it is recorded, not validated.
 
 The final check can only be done on a real phone: tap the link **inside actual
-Instagram** and confirm you land in the App Store with no prompt. The
+Instagram**, tap **Open** on Instagram's "open an app outside of Instagram?"
+sheet, and confirm you land in the App Store. (The sheet is expected — the page
+says "Tap Open" behind it and waits 12s before showing the manual steps.) The
 `extbrowser` escape is undocumented Meta behaviour and can break in an app
 update, which is why the fallback button on `/get/` is not optional.
 
