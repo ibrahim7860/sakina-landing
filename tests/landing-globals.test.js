@@ -109,3 +109,20 @@ test('both modules are actually included by the page', () => {
     );
   }
 });
+
+// /get/ forwards Android and desktop here, so one visit logs landing_viewed on
+// both pages; and without in_app_browser ~40% of views read as "undefined".
+test('the homepage view says which page and which in-app browser', () => {
+  const call = html.slice(html.indexOf('A.track(A.EVENTS.viewed'));
+  const body = call.slice(0, call.indexOf('});'));
+  assert.match(body, /in_app_browser: inAppBrowser\(\)/);
+  assert.match(body, /page: 'home'/);
+});
+
+// 64 of 70 App Store badge taps (2026-09-14..10-14) were Android phones,
+// sent to the store page of an app they cannot install.
+test('Android is not offered the App Store badge, and the hide actually applies', () => {
+  assert.match(html, /if \(!R \|\| !R\.isAndroid\(\)\) return;\s*var links = document\.querySelectorAll\('a\.appstore-btn'\);/);
+  // .store-btn is display:flex, which outranks the UA [hidden] rule.
+  assert.match(html, /\.store-btn\[hidden\] \{ display: none; \}/);
+});
