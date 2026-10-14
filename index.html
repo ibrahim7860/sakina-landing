@@ -162,6 +162,10 @@
       transition: transform 0.2s, filter 0.2s;
     }
 
+    /* Hidden from Android by the script at the foot of the page; `display:
+       flex` above would otherwise outrank the UA stylesheet's [hidden]. */
+    .store-btn[hidden] { display: none; }
+
     a.store-btn:hover {
       transform: translateY(-2px);
       filter: brightness(1.05);
@@ -869,7 +873,21 @@
         }
       }
 
-      A.track(A.EVENTS.viewed, { platform: platform(), channel: channel() });
+      function inAppBrowser() {
+        if (!R || !R.isInAppBrowser()) return 'none';
+        return R.isInstagramInApp() ? 'instagram' : 'facebook';
+      }
+
+      // `page` because /get/ forwards Android and desktop here, so one bio tap
+      // logs landing_viewed on both pages. in_app_browser because without it
+      // ~40% of all views read as "undefined" and the Instagram share of
+      // traffic could only be guessed.
+      A.track(A.EVENTS.viewed, {
+        platform: platform(),
+        channel: channel(),
+        in_app_browser: inAppBrowser(),
+        page: 'home'
+      });
 
       var storeLinks = document.querySelectorAll('a.appstore-btn');
       for (var i = 0; i < storeLinks.length; i++) {
@@ -879,10 +897,7 @@
           A.track(A.EVENTS.storeCta, {
             platform: platform(),
             channel: 'hero',
-            in_app_browser:
-              R && R.isInAppBrowser()
-                ? (R.isInstagramInApp() ? 'instagram' : 'facebook')
-                : 'none'
+            in_app_browser: inAppBrowser()
           });
         });
       }
@@ -944,6 +959,23 @@
       var R = window.AppRedirect;
       if (R && R.isIOS()) return;
       box.hidden = false;
+    })();
+
+    // ── No App Store badge for Android ───────────────────────────────────
+    // From 2026-09-14 to 2026-10-14, 64 of the 70 App Store badge taps came
+    // from Android phones inside Instagram. Every one of them landed on the
+    // store page of an iPhone app they cannot install, one tap away from the
+    // waitlist that was the only useful thing on offer.
+    //
+    // Gated on isAndroid, the opposite of the waitlist's gate above, for the
+    // same reason: a miss here (an Android visitor in desktop mode) leaves
+    // the badge where it always was; a false positive would hide the page's
+    // one earning action from an iPhone, and isAndroid cannot match an iPhone.
+    (function () {
+      var R = window.AppRedirect;
+      if (!R || !R.isAndroid()) return;
+      var links = document.querySelectorAll('a.appstore-btn');
+      for (var i = 0; i < links.length; i++) links[i].hidden = true;
     })();
 
     // ── Android waitlist ─────────────────────────────────────────────────

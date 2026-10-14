@@ -243,17 +243,25 @@
       } catch (e) { /* swallowed on purpose */ }
     }
 
-    // The escape's own outcome signals. Forwarded with the channel attached so
-    // a failure can be read per source — an escape that breaks for Instagram
-    // is the case worth catching, and Instagram is where the traffic is.
-    AppRedirect.CONFIG.onEvent = function (name, props) {
-      var enriched = {
+    /** The context every event on this page carries, plus an optional outcome. */
+    function context(outcome) {
+      var props = {
         channel: getChannel() || 'none',
         platform: platform(),
         in_app_browser: inAppBrowser(),
         reel: REEL_ID || 'none'
       };
-      if (props && props.outcome) enriched.outcome = props.outcome;
+      if (outcome) props.outcome = outcome;
+      return props;
+    }
+
+    // The escape's own outcome signals. Forwarded with the channel attached so
+    // a failure can be read per source — an escape that breaks for Instagram
+    // is the case worth catching, and Instagram is where the traffic is.
+    // These come from the manual button (app-redirect.js's click handler); the
+    // automatic escape on arrival reports its own, tagged 'auto'.
+    AppRedirect.CONFIG.onEvent = function (name, props) {
+      var enriched = context((props && props.outcome) || 'button');
 
       if (name === 'redirect_attempted') {
         track(A && A.EVENTS.redirectAttempted, enriched);
@@ -308,6 +316,41 @@
       manualWrap.classList.add('visible');
     }
 
+    // Until 2026-10-14 this page reported an escape's failure but never its
+    // attempt or its success: the automatic escape below fired with no
+    // redirect_attempted (only the manual button sent one), and nothing at all
+    // was sent when the visitor actually left for the store. Mixpanel showed
+    // 493 failures against 30 attempts, and every "failure" was
+    // indistinguishable from a visitor who got there a second late.
+    var fallbackShown = false;
+    var leaveWatched = false;
+
+    /**
+     * Report the first time the page is hidden or unloaded after an escape:
+     * the app switched to the App Store, or a store navigation committed.
+     * Runs for the page's lifetime, so a visitor who escapes only after the
+     * fallback appeared is counted as recovered rather than lost. Not blur:
+     * Instagram's own sheet can steal focus without anyone leaving.
+     */
+    function watchForLeave() {
+      if (leaveWatched) return;
+      leaveWatched = true;
+      function onLeave(e) {
+        if (e.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+        document.removeEventListener('visibilitychange', onLeave);
+        window.removeEventListener('pagehide', onLeave);
+        track(A && A.EVENTS.redirectLeft, context(fallbackShown ? 'after_fallback' : 'before_fallback'));
+      }
+      document.addEventListener('visibilitychange', onLeave);
+      window.addEventListener('pagehide', onLeave);
+    }
+
+    /** The automatic escape on arrival — the denominator for left and failed. */
+    function reportAutoAttempt() {
+      track(A && A.EVENTS.redirectAttempted, context('auto'));
+      watchForLeave();
+    }
+
     function armFallbackTimer(targetUrl, delayMs) {
       var settled = false;
       var timer = setTimeout(function () {
@@ -320,13 +363,14 @@
         // console, nothing. Reported as redirect_failed with the channel, so
         // "Instagram broke the extbrowser trick again" is visible here rather
         // than inferred weeks later from a dip in installs.
-        track(A && A.EVENTS.redirectFailed, {
-          channel: getChannel() || 'none',
-          platform: platform(),
-          in_app_browser: inAppBrowser(),
-          outcome: 'fallback_shown',
-          reel: REEL_ID || 'none'
-        });
+        //
+        // It is NOT proof the visitor was lost. A store page that takes longer
+        // than the timer to commit, or a visitor who reads Instagram's sheet
+        // past the grace and then taps Open, both land here and then leave —
+        // which watchForLeave reports as redirect_left{after_fallback}. Read
+        // real failures as attempted minus left, not as this count.
+        fallbackShown = true;
+        track(A && A.EVENTS.redirectFailed, context('fallback_shown'));
         showManualFallback(targetUrl);
       }, delayMs);
 
@@ -358,12 +402,9 @@
       // `channel` is the denominator the escape never had: taps that arrived
       // from the Instagram bio, against redirect_attempted and
       // redirect_failed from the same source.
-      track(A && A.EVENTS.viewed, {
-        channel: channel || 'none',
-        platform: platform(),
-        in_app_browser: inAppBrowser(),
-        reel: REEL_ID || 'none'
-      });
+      var viewedProps = context();
+      viewedProps.page = 'get';
+      track(A && A.EVENTS.viewed, viewedProps);
 
       // Desktop -> homepage, no store attempt.
       var isMobile = AppRedirect.isIOS() || AppRedirect.isAndroid();
@@ -398,6 +439,7 @@
         // grace instead of app-redirect.js's default.
         AppRedirect.CONFIG.escapeTimeoutMs = Math.max(AppRedirect.CONFIG.escapeTimeoutMs, IG_PROMPT_GRACE_MS);
         showOpenPrompt(IOS_STORE_URL);
+        reportAutoAttempt();
         armFallbackTimer(IOS_STORE_URL, IG_PROMPT_GRACE_MS);
         location.href = 'instagram://extbrowser/?url=' + encodeURIComponent(IOS_STORE_URL);
         return;
@@ -410,6 +452,7 @@
       // the 1.8s timer below correctly falls through to the manual
       // button — whose click *does* have the user gesture that the
       // x-safari- escape requires.)
+      reportAutoAttempt();
       armFallbackTimer(attributionLink, 1800);
       window.location.replace(attributionLink);
     }

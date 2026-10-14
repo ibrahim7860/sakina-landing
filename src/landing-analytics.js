@@ -41,6 +41,10 @@
     storeCta: 'landing_store_cta_tapped',
     redirectAttempted: 'landing_redirect_attempted',
     redirectFailed: 'landing_redirect_failed',
+    // The page lost visibility (app switched) or unloaded (navigation
+    // committed) after an escape fired. The only positive signal the escape
+    // has: without it, `failed` was a guess with nothing to check it against.
+    redirectLeft: 'landing_redirect_left',
     waitlist: 'landing_waitlist_tapped'
   };
 
@@ -53,8 +57,10 @@
    *  channel         — which surface on the page (hero, footer, …)
    *  outcome         — what happened ('opened', 'blocked', 'timeout', …)
    *  reel            — the Instagram media id from /get/?r=, or 'none'
+   *  page            — 'get' | 'home'. /get/ forwards Android and desktop to
+   *                    the homepage, so one visit can log landing_viewed twice
    */
-  var ALLOWED_PROPS = ['platform', 'in_app_browser', 'channel', 'outcome', 'reel'];
+  var ALLOWED_PROPS = ['platform', 'in_app_browser', 'channel', 'outcome', 'reel', 'page'];
 
   /** A bounded key with an unbounded value is still unbounded. */
   var MAX_VALUE_CHARS = 64;
