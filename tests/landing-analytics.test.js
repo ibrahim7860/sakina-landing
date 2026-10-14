@@ -42,8 +42,15 @@ test('every shipped event name is one the audit asked for', () => {
     storeCta: 'landing_store_cta_tapped',
     redirectAttempted: 'landing_redirect_attempted',
     redirectFailed: 'landing_redirect_failed',
+    redirectLeft: 'landing_redirect_left',
     waitlist: 'landing_waitlist_tapped'
   });
+});
+
+test('page survives the allow-list, so /get/ and homepage views can be told apart', () => {
+  const A = freshModule();
+  const payload = A.buildEvent('landing_viewed', { page: 'get' }, { token: 'tok', distinctId: 'anon-1', now: 1 });
+  assert.equal(payload.properties.page, 'get');
 });
 
 test('properties are bounded — unknown keys are dropped', () => {

@@ -25,8 +25,41 @@ test('/get/ reaches the module by the name it publishes', () => {
 });
 
 test('/get/ tags every escape event with the reel', () => {
+  // One shared context() builds every payload, so the reel is set in one place
+  // and no track call on this page may build its own props by hand.
   const tagged = page.match(/reel: REEL_ID \|\| 'none'/g) || [];
-  assert.equal(tagged.length, 3, 'landing_viewed, the onEvent enrichment, and the fallback redirect_failed');
+  assert.equal(tagged.length, 1, 'only context() should spell out the reel');
+  const calls = page.match(/track\(A && A\.EVENTS\.\w+, [^)]*\)/g) || [];
+  assert.ok(calls.length >= 5, 'expected viewed, attempted x2, failed x2, left: ' + calls.length);
+  for (const call of calls) {
+    assert.match(call, /, (context\(|enriched|viewedProps)/, 'payload not built by context(): ' + call);
+  }
+});
+
+// Until 2026-10-14 the automatic escape logged its failure but never its
+// attempt, and nothing logged success: 493 failures against 30 attempts in
+// Mixpanel, with no way to tell a lost visitor from a slow one.
+test('/get/ reports the automatic attempt before firing either escape', () => {
+  const run = page.slice(page.indexOf('function run()'));
+  const ig = run.slice(run.indexOf('if (AppRedirect.isIOS() && AppRedirect.isInstagramInApp())'));
+  assert.ok(ig.indexOf('reportAutoAttempt();') > -1 &&
+    ig.indexOf('reportAutoAttempt();') < ig.indexOf("location.href = 'instagram://extbrowser/"),
+    'Instagram branch must report the attempt before escaping');
+  const plain = run.slice(run.lastIndexOf('reportAutoAttempt();'));
+  assert.ok(plain.indexOf('window.location.replace(attributionLink)') > -1,
+    'plain-navigation branch must report the attempt before navigating');
+  assert.match(page, /track\(A && A\.EVENTS\.redirectAttempted, context\('auto'\)\)/);
+});
+
+test('/get/ reports leaving, and whether the fallback had already been shown', () => {
+  assert.match(page, /track\(A && A\.EVENTS\.redirectLeft, context\(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)/);
+  const timer = page.slice(page.indexOf('function armFallbackTimer'));
+  assert.ok(timer.indexOf('fallbackShown = true;') > -1 &&
+    timer.indexOf('fallbackShown = true;') < timer.indexOf('showManualFallback(targetUrl);'),
+    'the flag must flip before the fallback is painted');
+  // blur is deliberately not a leave signal: Instagram's sheet can take focus.
+  const watch = page.slice(page.indexOf('function watchForLeave'), page.indexOf('function reportAutoAttempt'));
+  assert.doesNotMatch(watch, /'blur'/);
 });
 
 // Instagram's "open an app outside of Instagram?" sheet suppresses every
