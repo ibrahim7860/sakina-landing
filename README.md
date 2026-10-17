@@ -30,6 +30,21 @@ says "Tap Open" behind it and waits 12s before showing the manual steps.) The
 `extbrowser` escape is undocumented Meta behaviour and can break in an app
 update, which is why the fallback button on `/get/` is not optional.
 
+## Turning on Android
+
+`/get/` sends Android visitors to the homepage waitlist until one line changes:
+`CONFIG.android.packageName` in `src/app-redirect.js`. Set it to
+`'com.sakina.app.sakina'` **the day the Play listing is public**, not before:
+until production access, the listing is "Not Found" to everyone outside the
+closed test.
+
+Once it is set, an Android tap on `/get/?src=ig_dm&r=<media id>` opens the Play
+Store app on the Sakina listing, with the channel and the reel in the install
+referrer (`utm_source=ig_dm&utm_medium=landing&utm_content=<media id>`). The app
+reads that once on first open and reports it as `install_referrer_read`, so
+Android installs are attributed per reel the way App Store campaign links are
+on iOS. Check it on a real Android phone inside Instagram after flipping.
+
 ## Reading the redirect events
 
 | Event | `outcome` | Means |

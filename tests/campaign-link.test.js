@@ -57,3 +57,38 @@ test('the shipped provider token is a real one, so the default path attributes',
   assert.match(C.PROVIDER_TOKEN, /^[0-9]+$/);
   assert.notEqual(C.campaignStoreUrl('179'), null);
 });
+
+// ---------------------------------------------------------------------
+// Android. Google Play carries attribution in `referrer`, which the app reads
+// once through the Play Install Referrer API on first open. The referrer is
+// itself a query string, so it must arrive percent-encoded as ONE parameter:
+// unencoded, Play would read utm_content as its own argument and drop it.
+// ---------------------------------------------------------------------
+
+test('playStoreUrl carries channel and reel in one encoded referrer', () => {
+  const C = fresh();
+  const url = C.playStoreUrl('com.sakina.app.sakina', 'ig_dm', '18104074904002924');
+  assert.equal(
+    url,
+    'https://play.google.com/store/apps/details?id=com.sakina.app.sakina&referrer=' +
+      'utm_source%3Dig_dm%26utm_medium%3Dlanding%26utm_content%3D18104074904002924'
+  );
+  const referrer = new URL(url).searchParams.get('referrer');
+  assert.equal(new URLSearchParams(referrer).get('utm_content'), '18104074904002924');
+});
+
+test('playStoreUrl still links to Play when channel or reel is missing or unsafe', () => {
+  const C = fresh();
+  const ref = (u) => new URLSearchParams(new URL(u).searchParams.get('referrer'));
+  assert.equal(ref(C.playStoreUrl('com.sakina.app.sakina', null, null)).get('utm_source'), 'none');
+  assert.equal(ref(C.playStoreUrl('com.sakina.app.sakina', 'a&b=c', 'bad id')).get('utm_source'), 'none');
+  assert.equal(ref(C.playStoreUrl('com.sakina.app.sakina', 'bio_getsakina', 'bad id')).get('utm_content'), null);
+});
+
+test('playStoreUrl returns null without a valid package, never a broken link', () => {
+  const C = fresh();
+  assert.equal(C.playStoreUrl(null, 'ig_dm', '179'), null);
+  assert.equal(C.playStoreUrl('', 'ig_dm', '179'), null);
+  assert.equal(C.playStoreUrl('not a package', 'ig_dm', '179'), null);
+  assert.equal(C.playStoreUrl('com.sakina.app.sakina&x=1', 'ig_dm', '179'), null);
+});

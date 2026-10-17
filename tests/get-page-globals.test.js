@@ -82,3 +82,28 @@ test('/get/ tells Instagram visitors to tap Open before escaping, and stretches 
   assert.match(page, /Tap \\u201cOpen\\u201d to continue to the App Store\./);
   assert.match(branch.slice(0, escape), /AppRedirect\.CONFIG\.escapeTimeoutMs = Math\.max\(AppRedirect\.CONFIG\.escapeTimeoutMs, IG_PROMPT_GRACE_MS\)/);
 });
+
+// The bug this pins (found 2026-10-17): the Android branch only checked that a
+// package name existed, then fell through to the plain branch, whose link is
+// attributionLinkFor() and whose default is the iOS store URL. Filling in the
+// package would have sent every Android visitor to the App Store.
+test('/get/ sends Android to Google Play, never to the App Store link', () => {
+  const run = page.slice(page.indexOf('function run()'));
+  const android = run.slice(run.indexOf('if (AppRedirect.isAndroid())'));
+  const branch = android.slice(0, android.indexOf('\n      }\n') + 8);
+  assert.ok(branch.length > 20, 'Android branch missing from run()');
+  assert.match(branch, /C\.playStoreUrl\(pkg, channel, REEL_ID\)/);
+  assert.doesNotMatch(branch, /attributionLink|IOS_STORE_URL/);
+  assert.match(branch, /window\.location\.replace\(homeWithChannel\(channel\)\)/,
+    'with no package (no public listing yet) Android must still go to the waitlist');
+  assert.match(branch, /reportAutoAttempt\(\);/);
+  assert.match(branch, /return;\s*}$/, 'the Android branch must end the run');
+  assert.ok(run.indexOf('if (AppRedirect.isAndroid())') <
+    run.indexOf('window.location.replace(attributionLink)'),
+    'the Android branch must come before the plain-navigation branch');
+});
+
+test('/get/ names Google Play, not the App Store, to Android visitors', () => {
+  assert.match(page, /storeName\('Google Play'\)/);
+  assert.match(page, /'Open ' \+ name/);
+});

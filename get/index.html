@@ -289,6 +289,12 @@
     // before calling it a failure.
     var IG_PROMPT_GRACE_MS = 12000;
 
+    /** The store this visit is heading to, in the status line and the button. */
+    function storeName(name) {
+      statusEl.textContent = 'Taking you to ' + name + '\u2026';
+      manualBtn.textContent = 'Open ' + name;
+    }
+
     function showOpenPrompt(targetUrl) {
       spinnerEl.style.display = 'none';
       statusEl.textContent = 'Tap \u201cOpen\u201d to continue to the App Store.';
@@ -413,14 +419,29 @@
         return;
       }
 
-      // Android before there is an Android build. The attribution map's
-      // neutral default is the iOS store URL, so this visitor was being
-      // dropped on an App Store page for an app they cannot install —
-      // from the bio link, which in these markets is mostly Android.
-      // Send them to the homepage instead, where the hero offers them the
-      // waitlist. A dead end becomes the one action they can take.
-      if (AppRedirect.isAndroid() && !AppRedirect.CONFIG.android.packageName) {
-        window.location.replace(homeWithChannel(channel));
+      // Android. Every branch below this one is iOS (or a non-Android
+      // browser): their link is the attribution map, whose default is the iOS
+      // store URL, so Android must never fall through to them. Until
+      // 2026-10-17 it could: this check only stopped Android while the package
+      // name was empty, and filling it in would have sent every Android
+      // visitor to the App Store.
+      //
+      // No package yet (the Play listing is not public): the homepage, where
+      // the hero offers the waitlist. A dead end becomes the one action they
+      // can take. With a package: the Play listing, the channel and reel in
+      // its install referrer, opened in the Play Store app by intent. That
+      // works from Instagram's Android webview without an escape sheet.
+      if (AppRedirect.isAndroid()) {
+        var pkg = AppRedirect.CONFIG.android.packageName;
+        var playUrl = pkg && C ? C.playStoreUrl(pkg, channel, REEL_ID) : null;
+        if (!playUrl) {
+          window.location.replace(homeWithChannel(channel));
+          return;
+        }
+        storeName('Google Play');
+        reportAutoAttempt();
+        armFallbackTimer(playUrl, 1800);
+        if (!AppRedirect.fireEscape(playUrl)) window.location.replace(playUrl);
         return;
       }
 
@@ -445,8 +466,9 @@
         return;
       }
 
-      // Android, or any other non-IG mobile browser (incl. iOS Facebook/
-      // Messenger): a plain server-redirect reaches the store fine here.
+      // Any other non-IG mobile browser (incl. iOS Facebook/Messenger; never
+      // Android, which returned above): a plain server-redirect reaches the
+      // store fine here.
       // (On iOS Facebook/Messenger specifically, Meta's block on
       // apps.apple.com navigation means this attempt silently no-ops and
       // the 1.8s timer below correctly falls through to the manual
