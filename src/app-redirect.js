@@ -34,10 +34,12 @@
       storeUrl: 'https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820'
     },
     android: {
-      // TODO: fill in once the Android build ships (e.g. "tech.belan.sakina").
-      // Everything below checks this before doing anything Android-specific,
-      // so leaving it null just quietly disables the Android path instead
-      // of producing a broken link.
+      // THE Android switch. Set to 'com.sakina.app.sakina' the day the Play
+      // listing is public (not before: until production access, the listing
+      // is "Not Found" to everyone outside the closed test). With it null,
+      // /get/ sends Android visitors to the homepage waitlist; set, it sends
+      // them straight to Google Play with the reel in the install referrer.
+      // Everything below checks this before doing anything Android-specific.
       packageName: null
     },
     // Optional per-channel attribution links (AppsFlyer OneLink, Branch, etc).
@@ -160,8 +162,7 @@
       if (androidPkg) {
         // intent:// is honored by every Android webview, including
         // in-app browsers, and is harmless in normal Chrome too.
-        var host = targetUrl.replace(/^https?:\/\//, '');
-        location.href = 'intent://' + host + '#Intent;scheme=https;end';
+        location.href = androidIntentFor(targetUrl);
       } else {
         // No Android app yet — fall through to the real href
         // (iOS store link isn't useful on Android, so let the normal
@@ -173,6 +174,27 @@
     }
 
     return false;
+  }
+
+  var PLAY_DETAILS = /^https:\/\/play\.google\.com\/store\/apps\/details\?/;
+
+  /**
+   * The intent that opens `targetUrl` from inside a webview. A Play listing
+   * goes to the Play Store app by package (market scheme), keeping its query,
+   * so `id` and the install `referrer` arrive exactly as built; an https
+   * intent with no package can resolve to Chrome, which would open the web
+   * listing in a second browser. If the Play Store app is missing, Android
+   * follows browser_fallback_url to the same listing on the web.
+   * Anything else keeps the plain https intent.
+   */
+  function androidIntentFor(targetUrl) {
+    if (PLAY_DETAILS.test(targetUrl)) {
+      return 'intent://details?' + targetUrl.slice(targetUrl.indexOf('?') + 1) +
+        '#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=' +
+        encodeURIComponent(targetUrl) + ';end';
+    }
+    var host = targetUrl.replace(/^https?:\/\//, '');
+    return 'intent://' + host + '#Intent;scheme=https;end';
   }
 
   // ======================================================================

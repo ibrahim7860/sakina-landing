@@ -174,18 +174,34 @@ test('fireEscape does NOT use x-safari- via location.href on Instagram (regressi
   assert.doesNotMatch(loc.href, /^x-safari-/);
 });
 
-test('fireEscape uses intent:// on Android when package is configured', () => {
+// A Play link goes to the Play Store app by name (market scheme, package
+// com.android.vending), keeping its query so the install referrer survives.
+// An https intent with no package can resolve to Chrome instead, which opens
+// the web listing inside a second browser and loses the one-tap install.
+test('fireEscape sends a Play link to the Play Store app on Android, referrer intact', () => {
   setNavigator({ userAgent: UA.androidInstagram });
   const loc = setLocation();
   const AR = freshModule();
   AR.CONFIG.android.packageName = 'com.example.sakina';
-  const target = 'https://play.google.com/store/apps/details?id=com.example.sakina';
+  const target = 'https://play.google.com/store/apps/details?id=com.example.sakina' +
+    '&referrer=utm_source%3Dig_dm%26utm_content%3D179';
   const attempted = AR.fireEscape(target);
   assert.equal(attempted, true);
   assert.equal(
     loc.href,
-    'intent://play.google.com/store/apps/details?id=com.example.sakina#Intent;scheme=https;end'
+    'intent://details?id=com.example.sakina&referrer=utm_source%3Dig_dm%26utm_content%3D179' +
+      '#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=' +
+      encodeURIComponent(target) + ';end'
   );
+});
+
+test('fireEscape still uses a plain https intent on Android for a non-Play url', () => {
+  setNavigator({ userAgent: UA.androidInstagram });
+  const loc = setLocation();
+  const AR = freshModule();
+  AR.CONFIG.android.packageName = 'com.example.sakina';
+  AR.fireEscape('https://example.com/path?x=1');
+  assert.equal(loc.href, 'intent://example.com/path?x=1#Intent;scheme=https;end');
 });
 
 test('fireEscape is a no-op on Android when no package is configured (no Android app yet)', () => {
