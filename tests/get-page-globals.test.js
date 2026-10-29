@@ -141,3 +141,9 @@ test('every homepage hand-off on /get/ goes through homeWithAttribution', () => 
   assert.doesNotMatch(page, /homeWithChannel/);
   assert.doesNotMatch(page, /location\.replace\(HOMEPAGE_URL\)/);
 });
+
+test('/get/ builds its store link from the reel or, failing that, the channel', () => {
+  assert.match(page, /var IOS_STORE_URL = \(C && C\.campaignStoreUrl\(C\.campaignTokenFrom\(window\.location\.search\)\)\) \|\| AppRedirect\.CONFIG\.ios\.storeUrl;/);
+  // REEL_ID stays the reel alone: it is what the events and Play referrer carry.
+  assert.match(page, /var REEL_ID = C \? C\.reelIdFrom\(window\.location\.search\) : null;/);
+});
