@@ -144,9 +144,28 @@ test('the homepage view says which reel the visitor came from', () => {
   assert.match(body, /reel: reel\(\)/);
 });
 
+// Runs the safety net itself against a stubbed iPhone, rather than pattern-
+// matching its source: `'&r=' + src` would satisfy a regex and still be wrong.
+function runSafetyNet(search, isIOS) {
+  const start = html.indexOf('// ── Campaign link safety net');
+  const iife = html.slice(html.indexOf('(function () {', start), html.indexOf('})();', start) + 5);
+  const replaced = [];
+  const location = { search, replace: (url) => replaced.push(url) };
+  const window = {
+    AppRedirect: { isIOS: () => isIOS },
+    SakinaCampaignLink: require('../src/campaign-link.js')
+  };
+  new Function('window', 'location', iife)(window, location);
+  return replaced;
+}
+
 test('the iOS safety net forwards the reel back to /get/', () => {
-  const net = html.slice(html.indexOf('// ── Campaign link safety net'));
-  const body = net.slice(0, net.indexOf('})();'));
-  assert.match(body, /SakinaCampaignLink/);
-  assert.match(body, /'&r=' \+ /);
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=18114548159510182', true),
+    ['get/?src=ig_dm&r=18114548159510182']);
+});
+
+test('the iOS safety net drops an invalid reel and leaves non-iOS visitors alone', () => {
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=1%262', true), ['get/?src=ig_dm']);
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=123', false), []);
+  assert.deepEqual(runSafetyNet('', true), []);
 });
