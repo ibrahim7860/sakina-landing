@@ -126,3 +126,27 @@ test('Android is not offered the App Store badge, and the hide actually applies'
   // .store-btn is display:flex, which outranks the UA [hidden] rule.
   assert.match(html, /\.store-btn\[hidden\] \{ display: none; \}/);
 });
+
+// The homepage receives DM taps from /get/ (desktop, some Android) and, by
+// mistake, from links pasted without /get/. Until 2026-10-29 it read ?src=
+// but never ?r=, so those views had no reel and the iOS safety net dropped it
+// on the way back to /get/.
+test('the homepage loads campaign-link.js before its inline glue', () => {
+  const tag = html.indexOf('<script src="src/campaign-link.js"></script>');
+  assert.ok(tag > -1, 'campaign-link.js is never loaded by index.html');
+  assert.ok(html.indexOf('<script>\n', tag) > tag, 'campaign-link.js must load before the glue');
+  assert.match(html, /window\.SakinaCampaignLink/);
+});
+
+test('the homepage view says which reel the visitor came from', () => {
+  const call = html.slice(html.indexOf('A.track(A.EVENTS.viewed'));
+  const body = call.slice(0, call.indexOf('});'));
+  assert.match(body, /reel: reel\(\)/);
+});
+
+test('the iOS safety net forwards the reel back to /get/', () => {
+  const net = html.slice(html.indexOf('// ── Campaign link safety net'));
+  const body = net.slice(0, net.indexOf('})();'));
+  assert.match(body, /SakinaCampaignLink/);
+  assert.match(body, /'&r=' \+ /);
+});

@@ -127,3 +127,20 @@ test('track hands the encoded payload to the transport exactly once', () => {
   assert.equal(decoded[0].event, 'landing_store_cta_tapped');
   assert.equal(decoded[0].properties.platform, 'ios');
 });
+
+// Mixpanel's own SDKs send `ip=1`; this hand-rolled sender did not, so every
+// landing event arrived with no country, region or city (2,834 visitors in
+// 30 days, all "undefined" on 2026-10-29). Mixpanel turns the request IP into
+// those three properties and discards the IP itself before ingestion.
+test('track asks Mixpanel to geolocate the visitor', () => {
+  const A = freshModule();
+  const calls = [];
+  A.track('landing_viewed', {}, {
+    token: 'tok',
+    distinctId: 'anon-1',
+    now: 1,
+    send: (url) => { calls.push(url); return true; }
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0]).searchParams.get('ip'), '1');
+});

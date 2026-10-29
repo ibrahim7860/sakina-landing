@@ -33,7 +33,10 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var TRACK_URL = 'https://api.mixpanel.com/track';
+  // `ip=1` is what Mixpanel's own SDKs send: geolocate from the request's IP.
+  // Without it every event arrives with no country, region or city. Mixpanel
+  // discards the IP itself before ingestion; only the three places are kept.
+  var TRACK_URL = 'https://api.mixpanel.com/track?ip=1';
 
   /** Every event this page may emit. Call sites index into this. */
   var EVENTS = {
