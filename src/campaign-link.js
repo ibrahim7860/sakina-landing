@@ -6,7 +6,8 @@
  * A reel's DM link is /get/?src=ig_dm&r=<instagram media id>. This turns
  * `r` into an App Store URL carrying pt (our provider token) and ct (the
  * reel), so App Analytics reports first-time downloads per reel. Apple's
- * campaign generator only ever builds this same string.
+ * campaign generator only ever builds this same string. A link with no reel
+ * (a bio, Facebook, cutt.ly) gets its channel as the ct instead.
  *
  * It is still a direct apps.apple.com link, not a tracking redirect, so the
  * Instagram extbrowser escape keeps its zero-prompt path.
@@ -56,11 +57,33 @@
   // A Java package name. Anchored, so nothing can ride along into the query.
   var PACKAGE = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 
-  function campaignStoreUrl(reelId, providerToken) {
+  /**
+   * The campaign a visit belongs to: the reel when `r` is a valid media id,
+   * otherwise the channel in `src` (bio_getsakina, fb_samiespeaks, …), so a
+   * bio or Facebook install is its own campaign rather than part of the
+   * organic remainder. A reel is the finer grain, so it wins. 'none' is the
+   * pages' own placeholder for "no channel" and never becomes a campaign.
+   */
+  function campaignTokenFrom(search) {
+    var reel = reelIdFrom(search);
+    if (reel) return reel;
+    try {
+      var channel = new URLSearchParams(search || '').get('src');
+      return channel && channel !== 'none' && CHANNEL.test(channel) ? channel : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // A campaign is a reel id or a channel, so the token is the union of both
+  // shapes. '_' is URL-safe, so the link still needs no escaping.
+  var CAMPAIGN = /^[A-Za-z0-9_-]{1,40}$/;
+
+  function campaignStoreUrl(token, providerToken) {
     var pt = providerToken === undefined ? PROVIDER_TOKEN : providerToken;
-    if (!reelId || !REEL_ID.test(reelId) || !/^[0-9]+$/.test(pt || '')) return null;
+    if (!token || !CAMPAIGN.test(token) || !/^[0-9]+$/.test(pt || '')) return null;
     return 'https://apps.apple.com/app/apple-store/id' + APP_ID +
-      '?pt=' + pt + '&ct=' + reelId + '&mt=8';
+      '?pt=' + pt + '&ct=' + token + '&mt=8';
   }
 
   /**
@@ -85,6 +108,7 @@
     APP_ID: APP_ID,
     PROVIDER_TOKEN: PROVIDER_TOKEN,
     reelIdFrom: reelIdFrom,
+    campaignTokenFrom: campaignTokenFrom,
     campaignStoreUrl: campaignStoreUrl,
     playStoreUrl: playStoreUrl
   };

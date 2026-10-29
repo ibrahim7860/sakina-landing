@@ -23,6 +23,12 @@ safety net, but publish the `/get/` URL.
 Change `src` per channel — `?src=tiktok`, `?src=youtube` — so each account
 reports separately in Mixpanel. Any value works; it is recorded, not validated.
 
+Since 2026-10-29 the `src` is also the App Store campaign (`ct`) for that link,
+so App Analytics → Campaigns lists each channel's first-time downloads on its
+own (Apple shows a campaign only once it has 5). A DM link's `r=<media id>`
+wins over its `src`, so reels keep their own campaign. Pick `src` values you
+are happy to see as campaign names: letters, digits, `_` and `-`, up to 40.
+
 The final check can only be done on a real phone: tap the link **inside actual
 Instagram**, tap **Open** on Instagram's "open an app outside of Instagram?"
 sheet, and confirm you land in the App Store. (The sheet is expected — the page

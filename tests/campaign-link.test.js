@@ -92,3 +92,35 @@ test('playStoreUrl returns null without a valid package, never a broken link', (
   assert.equal(C.playStoreUrl('not a package', 'ig_dm', '179'), null);
   assert.equal(C.playStoreUrl('com.sakina.app.sakina&x=1', 'ig_dm', '179'), null);
 });
+
+// ---------------------------------------------------------------------
+// Per-channel campaigns (2026-10-29). Only DM links carried a ct, so bio,
+// Facebook and cutt.ly installs were one anonymous lump in App Analytics. A
+// reel still wins; with no reel, the channel itself becomes the campaign. A
+// channel is ~10-100x a single reel's traffic, so it clears Apple's
+// 5-download floor where most reels never do.
+// ---------------------------------------------------------------------
+
+test('campaignTokenFrom prefers the reel, then the channel', () => {
+  const C = fresh();
+  assert.equal(C.campaignTokenFrom('?src=ig_dm&r=17947645578337196'), '17947645578337196');
+  assert.equal(C.campaignTokenFrom('?src=bio_getsakina'), 'bio_getsakina');
+  assert.equal(C.campaignTokenFrom('?src=fb_samiespeaks&r=bad%20id'), 'fb_samiespeaks');
+});
+
+test('campaignTokenFrom gives no campaign for a missing, placeholder or unsafe channel', () => {
+  const C = fresh();
+  assert.equal(C.campaignTokenFrom(''), null);
+  assert.equal(C.campaignTokenFrom('?src='), null);
+  assert.equal(C.campaignTokenFrom('?src=none'), null);
+  assert.equal(C.campaignTokenFrom('?src=a%26b%3Dc'), null);
+  assert.equal(C.campaignTokenFrom('?src=' + 'a'.repeat(41)), null);
+});
+
+test('campaignStoreUrl accepts a channel token as the campaign', () => {
+  const C = fresh();
+  assert.equal(
+    C.campaignStoreUrl('bio_getsakina', '118000000'),
+    'https://apps.apple.com/app/apple-store/id6762153820?pt=118000000&ct=bio_getsakina&mt=8'
+  );
+});
