@@ -69,7 +69,7 @@
     if (reel) return reel;
     try {
       var channel = new URLSearchParams(search || '').get('src');
-      return channel && channel !== 'none' && CHANNEL.test(channel) ? channel : null;
+      return channel && channel.toLowerCase() !== 'none' && CHANNEL.test(channel) ? channel : null;
     } catch (e) {
       return null;
     }

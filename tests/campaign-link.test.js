@@ -113,8 +113,10 @@ test('campaignTokenFrom gives no campaign for a missing, placeholder or unsafe c
   assert.equal(C.campaignTokenFrom(''), null);
   assert.equal(C.campaignTokenFrom('?src='), null);
   assert.equal(C.campaignTokenFrom('?src=none'), null);
+  assert.equal(C.campaignTokenFrom('?src=None'), null);
   assert.equal(C.campaignTokenFrom('?src=a%26b%3Dc'), null);
   assert.equal(C.campaignTokenFrom('?src=' + 'a'.repeat(41)), null);
+  assert.equal(C.campaignTokenFrom('?src=' + 'a'.repeat(40)), 'a'.repeat(40));
 });
 
 test('campaignStoreUrl accepts a channel token as the campaign', () => {
@@ -123,4 +125,6 @@ test('campaignStoreUrl accepts a channel token as the campaign', () => {
     C.campaignStoreUrl('bio_getsakina', '118000000'),
     'https://apps.apple.com/app/apple-store/id6762153820?pt=118000000&ct=bio_getsakina&mt=8'
   );
+  assert.equal(C.campaignStoreUrl('a&b=c', '118000000'), null);
+  assert.equal(C.campaignStoreUrl('a'.repeat(41), '118000000'), null);
 });
