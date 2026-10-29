@@ -94,7 +94,7 @@ test('/get/ sends Android to Google Play, never to the App Store link', () => {
   assert.ok(branch.length > 20, 'Android branch missing from run()');
   assert.match(branch, /C\.playStoreUrl\(pkg, channel, REEL_ID\)/);
   assert.doesNotMatch(branch, /attributionLink|IOS_STORE_URL/);
-  assert.match(branch, /window\.location\.replace\(homeWithChannel\(channel\)\)/,
+  assert.match(branch, /window\.location\.replace\(homeWithAttribution\(channel\)\)/,
     'with no package (no public listing yet) Android must still go to the waitlist');
   assert.match(branch, /reportAutoAttempt\(\);/);
   assert.match(branch, /return;\s*}$/, 'the Android branch must end the run');
@@ -106,4 +106,38 @@ test('/get/ sends Android to Google Play, never to the App Store link', () => {
 test('/get/ names Google Play, not the App Store, to Android visitors', () => {
   assert.match(page, /storeName\('Google Play'\)/);
   assert.match(page, /'Open ' \+ name/);
+});
+
+// /get/ hands desktop visitors (and Android ones with no Play link) to the
+// homepage. Until 2026-10-29 it carried ?src= but dropped ?r=, so a DM tap
+// that landed on the homepage could no longer say which reel it came from.
+function homeHandOff() {
+  const start = page.indexOf('function homeWithAttribution(');
+  assert.ok(start > -1, 'homeWithAttribution missing from /get/');
+  let depth = 0;
+  let end = page.indexOf('{', start);
+  for (; end < page.length; end++) {
+    if (page[end] === '{') depth++;
+    if (page[end] === '}' && --depth === 0) break;
+  }
+  const src = page.slice(start, end + 1);
+  return (reelId) => new Function('HOMEPAGE_URL', 'REEL_ID',
+    src + '\nreturn homeWithAttribution;')('https://home.test/', reelId);
+}
+
+test('/get/ carries the reel to the homepage, not just the channel', () => {
+  const url = new URL(homeHandOff()('18114548159510182')('ig_dm'));
+  assert.equal(url.searchParams.get('src'), 'ig_dm');
+  assert.equal(url.searchParams.get('r'), '18114548159510182');
+});
+
+test('/get/ hands off to the bare homepage when there is nothing to carry', () => {
+  assert.equal(homeHandOff()(null)(null), 'https://home.test/');
+  assert.equal(homeHandOff()(null)('bio_getsakina'), 'https://home.test/?src=bio_getsakina');
+  assert.equal(homeHandOff()('123')(null), 'https://home.test/?r=123');
+});
+
+test('every homepage hand-off on /get/ goes through homeWithAttribution', () => {
+  assert.doesNotMatch(page, /homeWithChannel/);
+  assert.doesNotMatch(page, /location\.replace\(HOMEPAGE_URL\)/);
 });

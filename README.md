@@ -49,10 +49,14 @@ on iOS. Check it on a real Android phone inside Instagram after flipping.
 
 | Event | `outcome` | Means |
 |---|---|---|
-| `landing_viewed` | — | A page loaded. `page` is `get` or `home`; an Android or desktop bio tap logs both |
+| `landing_viewed` | — | A page loaded. `page` is `get` or `home`; an Android or desktop bio tap logs both. `reel` is the `?r=` media id or `none` (on `home` too since 2026-10-29) |
 | `landing_redirect_attempted` | `auto` / `button` | `/get/` fired the escape on arrival, or the visitor tapped the fallback button |
 | `landing_redirect_failed` | `fallback_shown` | The timer ran out and the manual button was painted. **Not** proof of a lost visitor |
 | `landing_redirect_left` | `before_fallback` / `after_fallback` | The page was hidden or unloaded after an escape — the visitor left for the store |
+
+Every event carries Mixpanel's `mp_country_code`, `$region` and `$city` from
+2026-10-29 on (the sender now passes `ip=1`; Mixpanel drops the IP itself).
+Earlier events have no location at all.
 
 Escape success rate is `left ÷ attempted{auto}`. A `failed` followed by
 `left{after_fallback}` is a slow store load or someone who read Instagram's sheet

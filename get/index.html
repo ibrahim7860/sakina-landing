@@ -187,15 +187,19 @@
     }
 
     /**
-     * Homepage URL carrying the channel forward. Everyone this page hands to
-     * the homepage — desktop, and Android until there is an Android build —
-     * would otherwise arrive anonymous, and those are the visitors most likely
-     * to join the waitlist. Keeping ?src= means a bio tap stays attributable
-     * all the way to the signup.
+     * Homepage URL carrying the channel and the reel forward. Everyone this
+     * page hands to the homepage — desktop, and Android when there is no Play
+     * link — would otherwise arrive anonymous, and those are the visitors most
+     * likely to join the waitlist. Keeping ?src= means a bio tap stays
+     * attributable all the way to the signup; keeping ?r= means a DM tap still
+     * says which reel it came from. REEL_ID is already validated by
+     * campaign-link.js, so it needs no escaping.
      */
-    function homeWithChannel(channel) {
-      if (!channel) return HOMEPAGE_URL;
-      return HOMEPAGE_URL + '?src=' + encodeURIComponent(channel);
+    function homeWithAttribution(channel) {
+      var query = [];
+      if (channel) query.push('src=' + encodeURIComponent(channel));
+      if (REEL_ID) query.push('r=' + REEL_ID);
+      return query.length ? HOMEPAGE_URL + '?' + query.join('&') : HOMEPAGE_URL;
     }
 
     // ------------------------------------------------------------------
@@ -415,7 +419,7 @@
       // Desktop -> homepage, no store attempt.
       var isMobile = AppRedirect.isIOS() || AppRedirect.isAndroid();
       if (!isMobile) {
-        window.location.replace(homeWithChannel(channel));
+        window.location.replace(homeWithAttribution(channel));
         return;
       }
 
@@ -435,7 +439,7 @@
         var pkg = AppRedirect.CONFIG.android.packageName;
         var playUrl = pkg && C ? C.playStoreUrl(pkg, channel, REEL_ID) : null;
         if (!playUrl) {
-          window.location.replace(homeWithChannel(channel));
+          window.location.replace(homeWithAttribution(channel));
           return;
         }
         storeName('Google Play');

@@ -824,6 +824,7 @@
   </footer>
 
   <script src="src/landing-analytics.js"></script>
+  <script src="src/campaign-link.js"></script>
   <script src="src/app-redirect.js"></script>
   <script src="src/waitlist.js"></script>
   <script>
@@ -873,6 +874,13 @@
         }
       }
 
+      // reel comes from ?r=, which /get/ forwards alongside ?src= so a DM tap
+      // handed here still says which reel it came from.
+      function reel() {
+        var C = window.SakinaCampaignLink;
+        return (C && C.reelIdFrom(location.search)) || 'none';
+      }
+
       function inAppBrowser() {
         if (!R || !R.isInAppBrowser()) return 'none';
         return R.isInstagramInApp() ? 'instagram' : 'facebook';
@@ -886,6 +894,7 @@
         platform: platform(),
         channel: channel(),
         in_app_browser: inAppBrowser(),
+        reel: reel(),
         page: 'home'
       });
 
@@ -929,7 +938,10 @@
         return;
       }
       if (!src) return;
-      location.replace('get/?src=' + encodeURIComponent(src));
+      // The reel rides along, or a mis-pasted DM link loses its Campaign Link.
+      var C = window.SakinaCampaignLink;
+      var reelId = C && C.reelIdFrom(location.search);
+      location.replace('get/?src=' + encodeURIComponent(src) + (reelId ? '&r=' + reelId : ''));
     })();
 
     // ── Hero waitlist, hidden only from people who can install ───────────

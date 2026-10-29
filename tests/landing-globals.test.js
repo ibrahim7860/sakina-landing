@@ -126,3 +126,46 @@ test('Android is not offered the App Store badge, and the hide actually applies'
   // .store-btn is display:flex, which outranks the UA [hidden] rule.
   assert.match(html, /\.store-btn\[hidden\] \{ display: none; \}/);
 });
+
+// The homepage receives DM taps from /get/ (desktop, some Android) and, by
+// mistake, from links pasted without /get/. Until 2026-10-29 it read ?src=
+// but never ?r=, so those views had no reel and the iOS safety net dropped it
+// on the way back to /get/.
+test('the homepage loads campaign-link.js before its inline glue', () => {
+  const tag = html.indexOf('<script src="src/campaign-link.js"></script>');
+  assert.ok(tag > -1, 'campaign-link.js is never loaded by index.html');
+  assert.ok(html.indexOf('<script>\n', tag) > tag, 'campaign-link.js must load before the glue');
+  assert.match(html, /window\.SakinaCampaignLink/);
+});
+
+test('the homepage view says which reel the visitor came from', () => {
+  const call = html.slice(html.indexOf('A.track(A.EVENTS.viewed'));
+  const body = call.slice(0, call.indexOf('});'));
+  assert.match(body, /reel: reel\(\)/);
+});
+
+// Runs the safety net itself against a stubbed iPhone, rather than pattern-
+// matching its source: `'&r=' + src` would satisfy a regex and still be wrong.
+function runSafetyNet(search, isIOS) {
+  const start = html.indexOf('// ── Campaign link safety net');
+  const iife = html.slice(html.indexOf('(function () {', start), html.indexOf('})();', start) + 5);
+  const replaced = [];
+  const location = { search, replace: (url) => replaced.push(url) };
+  const window = {
+    AppRedirect: { isIOS: () => isIOS },
+    SakinaCampaignLink: require('../src/campaign-link.js')
+  };
+  new Function('window', 'location', iife)(window, location);
+  return replaced;
+}
+
+test('the iOS safety net forwards the reel back to /get/', () => {
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=18114548159510182', true),
+    ['get/?src=ig_dm&r=18114548159510182']);
+});
+
+test('the iOS safety net drops an invalid reel and leaves non-iOS visitors alone', () => {
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=1%262', true), ['get/?src=ig_dm']);
+  assert.deepEqual(runSafetyNet('?src=ig_dm&r=123', false), []);
+  assert.deepEqual(runSafetyNet('', true), []);
+});
