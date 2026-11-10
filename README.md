@@ -29,6 +29,15 @@ own (Apple shows a campaign only once it has 5). A DM link's `r=<media id>`
 wins over its `src`, so reels keep their own campaign. Pick `src` values you
 are happy to see as campaign names: letters, digits, `_` and `-`, up to 40.
 
+**TikTok:** use `https://ibrahim7860.github.io/sakina-landing/get/?src=tiktok`,
+never a direct App Store link. TikTok's in-app browser refuses to open the App
+Store ("Action can't be completed" on a blank page, real iPhone 2026-11-09), so
+`/get/` does not redirect inside TikTok. It shows an **Open in Safari** button
+and the manual steps (••• → Open in browser); Safari then runs the normal
+redirect. Read it as `landing_viewed{in_app_browser=tiktok}` against
+`landing_redirect_left{tiktok_prompt}` (an upper bound: closing the webview
+also counts), never in the `attempted{auto}` ratio below.
+
 The final check can only be done on a real phone: tap the link **inside actual
 Instagram**, tap **Open** on Instagram's "open an app outside of Instagram?"
 sheet, and confirm you land in the App Store. (The sheet is expected — the page

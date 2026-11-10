@@ -141,3 +141,27 @@ test('a throwing reporter never breaks the escape', () => {
   assert.equal(ev.defaultPrevented, true,
     'the escape still took over the click, which is the behaviour that matters');
 });
+
+test('a TikTok escape attempt reports the TikTok webview', () => {
+  setBrowserGlobals();
+  setNavigator({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 musical_ly_34.1.0 BytedanceWebview/d8a21c6' });
+  const R = freshModule();
+  const events = [];
+  R.CONFIG.onEvent = (name, props) => events.push({ name, props });
+  R.handleStoreClick(fakeEvent(), STORE);
+  const attempted = events.find((e) => e.name === 'redirect_attempted');
+  assert.ok(attempted);
+  assert.equal(attempted.props.in_app_browser, 'tiktok');
+});
+
+test('Android TikTok with no Play package keeps the plain link', () => {
+  setBrowserGlobals();
+  setNavigator({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0 Mobile Safari/537.36 trill_340104 AppName/musical_ly BytedanceWebview/d8a21c6' });
+  const R = freshModule();
+  const events = [];
+  R.CONFIG.onEvent = (name) => events.push(name);
+  const e = fakeEvent();
+  R.handleStoreClick(e, STORE);
+  assert.equal(e.defaultPrevented, false, 'no escape exists yet, so the tap must navigate');
+  assert.deepEqual(events, []);
+});

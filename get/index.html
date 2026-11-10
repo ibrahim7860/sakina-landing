@@ -231,11 +231,6 @@
       }
     }
 
-    function inAppBrowser() {
-      if (!AppRedirect.isInAppBrowser()) return 'none';
-      return AppRedirect.isInstagramInApp() ? 'instagram' : 'facebook';
-    }
-
     function platform() {
       return AppRedirect.isIOS() ? 'ios' : AppRedirect.isAndroid() ? 'android' : 'other';
     }
@@ -253,7 +248,7 @@
       var props = {
         channel: getChannel() || 'none',
         platform: platform(),
-        in_app_browser: inAppBrowser(),
+        in_app_browser: AppRedirect.inAppBrowserName(),
         reel: REEL_ID || 'none'
       };
       if (outcome) props.outcome = outcome;
@@ -310,6 +305,23 @@
       manualWrap.classList.add('visible');
     }
 
+    // TikTok's webview refuses to hand apps.apple.com to the App Store: a real
+    // iPhone (2026-11-09) showed "Action can't be completed" on a blank page.
+    // So nothing navigates on arrival; the visitor sees the menu item that
+    // works, and the button tries Safari directly (x-safari-, which needs the
+    // tap's own user gesture — see AppRedirect.fireEscape).
+    function showTikTokPrompt(targetUrl) {
+      spinnerEl.style.display = 'none';
+      statusEl.textContent = 'TikTok can\u2019t open the App Store. Tap below, or open this page in your browser:';
+      manualBtn.textContent = 'Open in Safari';
+      manualBtn.setAttribute('data-store-url', targetUrl);
+      manualBtn.setAttribute('href', targetUrl);
+      AppRedirect.bindElement(manualBtn);
+      manualSteps.innerHTML = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in browser\u201d']
+        .map(function (s) { return '<li>' + s + '</li>'; }).join('');
+      manualWrap.classList.add('visible');
+    }
+
     function showManualFallback(targetUrl) {
       spinnerEl.style.display = 'none';
       statusEl.textContent = 'Tap below to continue.';
@@ -343,14 +355,14 @@
      * fallback appeared is counted as recovered rather than lost. Not blur:
      * Instagram's own sheet can steal focus without anyone leaving.
      */
-    function watchForLeave() {
+    function watchForLeave(outcome) {
       if (leaveWatched) return;
       leaveWatched = true;
       function onLeave(e) {
         if (e.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
         document.removeEventListener('visibilitychange', onLeave);
         window.removeEventListener('pagehide', onLeave);
-        track(A && A.EVENTS.redirectLeft, context(fallbackShown ? 'after_fallback' : 'before_fallback'));
+        track(A && A.EVENTS.redirectLeft, context(outcome || (fallbackShown ? 'after_fallback' : 'before_fallback')));
       }
       document.addEventListener('visibilitychange', onLeave);
       window.addEventListener('pagehide', onLeave);
@@ -447,6 +459,19 @@
         reportAutoAttempt();
         armFallbackTimer(playUrl, 1800);
         if (!AppRedirect.fireEscape(playUrl)) window.location.replace(playUrl);
+        return;
+      }
+
+      // iOS TikTok: no automatic attempt — the plain redirect below is exactly
+      // the navigation TikTok blocks, and it would leave a blank page behind
+      // TikTok's error toast. No reportAutoAttempt either, and the leave is
+      // its own outcome, so left{before|after_fallback} ÷ attempted{auto}
+      // stays a measure of the escapes that do run. left{tiktok_prompt} is an
+      // upper bound: closing the webview to go back to the feed hides the page
+      // too.
+      if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp()) {
+        showTikTokPrompt(IOS_STORE_URL);
+        watchForLeave('tiktok_prompt');
         return;
       }
 
