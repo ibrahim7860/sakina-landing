@@ -169,3 +169,8 @@ test('the iOS safety net drops an invalid reel and leaves non-iOS visitors alone
   assert.deepEqual(runSafetyNet('?src=ig_dm&r=123', false), []);
   assert.deepEqual(runSafetyNet('', true), []);
 });
+
+test('the homepage names the webview through app-redirect.js, so TikTok is reported', () => {
+  assert.match(html, /R\.inAppBrowserName\(\)/);
+  assert.doesNotMatch(html, /R\.isInstagramInApp\(\) \? 'instagram' : 'facebook'/);
+});

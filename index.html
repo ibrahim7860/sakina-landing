@@ -882,8 +882,7 @@
       }
 
       function inAppBrowser() {
-        if (!R || !R.isInAppBrowser()) return 'none';
-        return R.isInstagramInApp() ? 'instagram' : 'facebook';
+        return R ? R.inAppBrowserName() : 'none';
       }
 
       // `page` because /get/ forwards Android and desktop here, so one bio tap

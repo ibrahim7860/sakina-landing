@@ -52,6 +52,12 @@ const UA = {
     'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0 Mobile Safari/537.36',
   androidInstagram:
     'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Instagram 302.0.0.23.114',
+  // Real TikTok webview tokens: musical_ly_<ver> on iOS, trill_<ver> +
+  // AppName/musical_ly on Android, BytedanceWebview on both.
+  iosTikTok:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_34.1.0 JsSdk/2.0 NetType/WIFI Channel/App Store ByteLocale/en Region/US WKWebView/1 BytedanceWebview/d8a21c6',
+  androidTikTok:
+    'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0 Mobile Safari/537.36 trill_340104 JsSdk/1.0 NetType/WIFI Channel/googleplay AppName/musical_ly app_version/34.1.4 ByteLocale/en BytedanceWebview/d8a21c6',
   desktopChrome:
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/125.0 Safari/537.36'
 };
@@ -237,4 +243,55 @@ test('CONFIG default: iOS store url is the raw apps.apple.com link, not a tracki
   setNavigator({ userAgent: UA.desktopChrome });
   const AR = freshModule();
   assert.match(AR.CONFIG.ios.storeUrl, /^https:\/\/apps\.apple\.com\//);
+});
+
+// ---------------------------------------------------------------------
+// TikTok (2026-11-09). Its webview refuses to hand apps.apple.com to the App
+// Store — a real iPhone showed "Action can't be completed" on a blank
+// tiktoklinksafety.us page — and until now this file did not know TikTok was
+// an in-app browser at all, so it treated it as Safari.
+// ---------------------------------------------------------------------
+
+test('isTikTokInApp true for the iOS and Android TikTok webviews', () => {
+  for (const ua of [UA.iosTikTok, UA.androidTikTok]) {
+    setNavigator({ userAgent: ua });
+    assert.equal(freshModule().isTikTokInApp(), true, ua);
+  }
+});
+
+test('isTikTokInApp false outside TikTok', () => {
+  for (const ua of [UA.iosSafari, UA.iosInstagram, UA.iosFacebook, UA.androidChrome, UA.desktopChrome]) {
+    setNavigator({ userAgent: ua });
+    assert.equal(freshModule().isTikTokInApp(), false, ua);
+  }
+});
+
+test('TikTok counts as an in-app browser', () => {
+  setNavigator({ userAgent: UA.iosTikTok });
+  assert.equal(freshModule().isInAppBrowser(), true);
+});
+
+test('fireEscape tries Safari via window.open("x-safari-...") on iOS TikTok', () => {
+  setNavigator({ userAgent: UA.iosTikTok });
+  const loc = setLocation();
+  const AR = freshModule();
+  let openedUrl = null;
+  global.window = { open: (url) => { openedUrl = url; } };
+  const target = 'https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820';
+  assert.equal(AR.fireEscape(target), true);
+  assert.equal(openedUrl, 'x-safari-' + target);
+  assert.equal(loc.href, '', 'never a plain navigation: that is the one TikTok blocks');
+  delete global.window;
+});
+
+test('inAppBrowserName names every webview the pages report', () => {
+  const cases = [
+    [UA.iosInstagram, 'instagram'], [UA.iosThreads, 'instagram'],
+    [UA.iosFacebook, 'facebook'], [UA.iosTikTok, 'tiktok'],
+    [UA.androidTikTok, 'tiktok'], [UA.iosSafari, 'none']
+  ];
+  for (const [ua, name] of cases) {
+    setNavigator({ userAgent: ua });
+    assert.equal(freshModule().inAppBrowserName(), name, ua);
+  }
 });

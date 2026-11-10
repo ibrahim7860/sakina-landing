@@ -141,3 +141,15 @@ test('a throwing reporter never breaks the escape', () => {
   assert.equal(ev.defaultPrevented, true,
     'the escape still took over the click, which is the behaviour that matters');
 });
+
+test('a TikTok escape attempt reports the TikTok webview', () => {
+  setBrowserGlobals();
+  setNavigator({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 musical_ly_34.1.0 BytedanceWebview/d8a21c6' });
+  const R = freshModule();
+  const events = [];
+  R.CONFIG.onEvent = (name, props) => events.push({ name, props });
+  R.handleStoreClick(fakeEvent(), STORE);
+  const attempted = events.find((e) => e.name === 'redirect_attempted');
+  assert.ok(attempted);
+  assert.equal(attempted.props.in_app_browser, 'tiktok');
+});

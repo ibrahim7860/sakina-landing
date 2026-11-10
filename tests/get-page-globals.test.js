@@ -147,3 +147,30 @@ test('/get/ builds its store link from the reel or, failing that, the channel', 
   // REEL_ID stays the reel alone: it is what the events and Play referrer carry.
   assert.match(page, /var REEL_ID = C \? C\.reelIdFrom\(window\.location\.search\) : null;/);
 });
+
+// TikTok refuses the plain store navigation ("Action can't be completed",
+// real iPhone 2026-11-09), so /get/ must not attempt it there: the visitor
+// gets the steps that work and a button that tries Safari on their tap.
+test('/get/ never auto-redirects inside TikTok on iOS', () => {
+  const run = page.slice(page.indexOf('function run()'));
+  const at = run.indexOf('if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp())');
+  assert.ok(at > -1, 'iOS TikTok branch missing from run()');
+  assert.ok(at < run.indexOf('window.location.replace(attributionLink)'),
+    'the TikTok branch must come before the plain-navigation branch');
+  const branch = run.slice(at, run.indexOf('return;', at) + 7);
+  assert.match(branch, /showTikTokPrompt\(IOS_STORE_URL\);/);
+  assert.match(branch, /watchForLeave\(\);/);
+  assert.doesNotMatch(branch, /location\.(replace|href)|reportAutoAttempt|armFallbackTimer/);
+});
+
+test('/get/ tells TikTok visitors which menu item works', () => {
+  const fn = page.slice(page.indexOf('function showTikTokPrompt'));
+  const body = fn.slice(0, fn.indexOf('\n    }\n') + 6);
+  assert.match(body, /Open in browser/);
+  assert.match(body, /AppRedirect\.bindElement\(manualBtn\)/);
+});
+
+test('/get/ names the webview through app-redirect.js, not its own list', () => {
+  assert.match(page, /AppRedirect\.inAppBrowserName\(\)/);
+  assert.doesNotMatch(page, /function inAppBrowser\(/);
+});

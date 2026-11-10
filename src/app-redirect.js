@@ -2,7 +2,7 @@
  * app-redirect.js
  * -----------------------------------------------------------------------
  * One-click "go to app store" system that survives Instagram / Facebook /
- * Messenger / Threads in-app browsers, plus Android webviews.
+ * Messenger / Threads / TikTok in-app browsers, plus Android webviews.
  *
  * Zero dependencies. Works as a plain <script> tag or an ES module.
  *
@@ -79,11 +79,7 @@
   function escapeContext() {
     return {
       platform: isIOS() ? 'ios' : isAndroid() ? 'android' : 'other',
-      in_app_browser: isInstagramInApp()
-        ? 'instagram'
-        : isFacebookInApp()
-          ? 'facebook'
-          : 'none'
+      in_app_browser: inAppBrowserName()
     };
   }
 
@@ -123,8 +119,22 @@
     return /FBAN|FBAV|FB_IAB|Messenger/i.test(ua);
   }
 
+  function isTikTokInApp() {
+    // musical_ly_<ver> (iOS) / trill_<ver> + AppName/musical_ly (Android) are
+    // TikTok's own app tokens; BytedanceWebview is its webview on both.
+    return /musical_ly|BytedanceWebview|\btrill_/i.test(getUA());
+  }
+
   function isInAppBrowser() {
-    return isInstagramInApp() || isFacebookInApp();
+    return isInstagramInApp() || isFacebookInApp() || isTikTokInApp();
+  }
+
+  /** The webview's name for telemetry: one list, shared by both pages. */
+  function inAppBrowserName() {
+    if (isInstagramInApp()) return 'instagram';
+    if (isFacebookInApp()) return 'facebook';
+    if (isTikTokInApp()) return 'tiktok';
+    return 'none';
   }
 
   // ======================================================================
@@ -150,9 +160,11 @@
       return true;
     }
 
-    if (isIOS() && isFacebookInApp()) {
+    if (isIOS() && (isFacebookInApp() || isTikTokInApp())) {
       // Only works inside a user-gesture. Caller is responsible for
-      // ensuring this runs synchronously inside a click handler.
+      // ensuring this runs synchronously inside a click handler. TikTok
+      // refuses a plain apps.apple.com navigation outright ("Action can't be
+      // completed"), so Safari is the only door worth trying there too.
       window.open('x-safari-' + targetUrl, '_blank');
       return true;
     }
@@ -254,9 +266,11 @@
 
     var manualSteps = isIOS() && isInstagramInApp()
       ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in external browser.\u201d'
-      : isIOS() && isFacebookInApp()
+: isIOS() && isFacebookInApp()
         ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in Safari.\u201d'
-        : 'Tap your browser\u2019s menu, then choose \u201cOpen in browser.\u201d';
+        : isTikTokInApp()
+          ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in browser.\u201d'
+          : 'Tap your browser\u2019s menu, then choose \u201cOpen in browser.\u201d';
 
     overlay.innerHTML =
       '<div class="ar-sheet">' +
@@ -411,7 +425,9 @@
     isAndroid: isAndroid,
     isInstagramInApp: isInstagramInApp,
     isFacebookInApp: isFacebookInApp,
+    isTikTokInApp: isTikTokInApp,
     isInAppBrowser: isInAppBrowser,
+    inAppBrowserName: inAppBrowserName,
     fireEscape: fireEscape,
     handleStoreClick: handleStoreClick,
     bindElement: bindElement,
