@@ -266,7 +266,7 @@
 
     var manualSteps = isIOS() && isInstagramInApp()
       ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in external browser.\u201d'
-: isIOS() && isFacebookInApp()
+      : isIOS() && isFacebookInApp()
         ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in Safari.\u201d'
         : isTikTokInApp()
           ? 'Tap the \u2022\u2022\u2022 menu at the top right, then choose \u201cOpen in browser.\u201d'

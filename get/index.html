@@ -355,14 +355,14 @@
      * fallback appeared is counted as recovered rather than lost. Not blur:
      * Instagram's own sheet can steal focus without anyone leaving.
      */
-    function watchForLeave() {
+    function watchForLeave(outcome) {
       if (leaveWatched) return;
       leaveWatched = true;
       function onLeave(e) {
         if (e.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
         document.removeEventListener('visibilitychange', onLeave);
         window.removeEventListener('pagehide', onLeave);
-        track(A && A.EVENTS.redirectLeft, context(fallbackShown ? 'after_fallback' : 'before_fallback'));
+        track(A && A.EVENTS.redirectLeft, context(outcome || (fallbackShown ? 'after_fallback' : 'before_fallback')));
       }
       document.addEventListener('visibilitychange', onLeave);
       window.addEventListener('pagehide', onLeave);
@@ -464,13 +464,14 @@
 
       // iOS TikTok: no automatic attempt — the plain redirect below is exactly
       // the navigation TikTok blocks, and it would leave a blank page behind
-      // TikTok's error toast. No reportAutoAttempt either, so left ÷
-      // attempted{auto} stays a measure of the escapes that do run; read TikTok
-      // as landing_viewed{in_app_browser=tiktok} against left and
-      // attempted{button}.
+      // TikTok's error toast. No reportAutoAttempt either, and the leave is
+      // its own outcome, so left{before|after_fallback} ÷ attempted{auto}
+      // stays a measure of the escapes that do run. left{tiktok_prompt} is an
+      // upper bound: closing the webview to go back to the feed hides the page
+      // too.
       if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp()) {
         showTikTokPrompt(IOS_STORE_URL);
-        watchForLeave();
+        watchForLeave('tiktok_prompt');
         return;
       }
 

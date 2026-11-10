@@ -153,3 +153,15 @@ test('a TikTok escape attempt reports the TikTok webview', () => {
   assert.ok(attempted);
   assert.equal(attempted.props.in_app_browser, 'tiktok');
 });
+
+test('Android TikTok with no Play package keeps the plain link', () => {
+  setBrowserGlobals();
+  setNavigator({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/125.0 Mobile Safari/537.36 trill_340104 AppName/musical_ly BytedanceWebview/d8a21c6' });
+  const R = freshModule();
+  const events = [];
+  R.CONFIG.onEvent = (name) => events.push(name);
+  const e = fakeEvent();
+  R.handleStoreClick(e, STORE);
+  assert.equal(e.defaultPrevented, false, 'no escape exists yet, so the tap must navigate');
+  assert.deepEqual(events, []);
+});

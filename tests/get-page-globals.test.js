@@ -52,7 +52,10 @@ test('/get/ reports the automatic attempt before firing either escape', () => {
 });
 
 test('/get/ reports leaving, and whether the fallback had already been shown', () => {
-  assert.match(page, /track\(A && A\.EVENTS\.redirectLeft, context\(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)/);
+  assert.match(page, /track\(A && A\.EVENTS\.redirectLeft, context\(outcome \|\| \(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)\)/);
+  // Every escape path but TikTok's watches with no outcome of its own.
+  const calls = page.match(/watchForLeave\([^)]*\);/g) || [];
+  assert.deepEqual(calls.sort(), ["watchForLeave('tiktok_prompt');", 'watchForLeave();']);
   const timer = page.slice(page.indexOf('function armFallbackTimer'));
   assert.ok(timer.indexOf('fallbackShown = true;') > -1 &&
     timer.indexOf('fallbackShown = true;') < timer.indexOf('showManualFallback(targetUrl);'),
@@ -159,7 +162,11 @@ test('/get/ never auto-redirects inside TikTok on iOS', () => {
     'the TikTok branch must come before the plain-navigation branch');
   const branch = run.slice(at, run.indexOf('return;', at) + 7);
   assert.match(branch, /showTikTokPrompt\(IOS_STORE_URL\);/);
-  assert.match(branch, /watchForLeave\(\);/);
+  // Its own outcome: a TikTok leave has no attempted{auto} to divide by.
+  assert.match(branch, /watchForLeave\('tiktok_prompt'\);/);
+  assert.match(page, /context\(outcome \|\| \(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)/);
+  assert.ok(at > run.indexOf('if (AppRedirect.isAndroid())'),
+    'Android returns first: Android TikTok keeps the Android path');
   assert.doesNotMatch(branch, /location\.(replace|href)|reportAutoAttempt|armFallbackTimer/);
 });
 
