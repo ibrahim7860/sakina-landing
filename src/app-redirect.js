@@ -300,6 +300,7 @@
         : '<p>This app can\u2019t open the App Store directly from here. Open this page in your browser instead:</p>') +
       '<ol><li>' + manualSteps + '</li><li>Tap the download button again from your browser.</li></ol>' +
       (opts.onRetry ? '<button class="ar-btn ar-btn-primary" type="button" data-ar-action="retry">Try again</button>' : '') +
+      '<p>Or open the App Store and search <strong>\u201cSakina Islamic Wellness\u201d</strong>.</p>' +
       '<a class="ar-btn ar-btn-secondary" data-ar-action="copy" href="' + opts.targetUrl + '" target="_blank" rel="noopener">Copy link</a>' +
       '</div>';
 

@@ -135,6 +135,42 @@
     max-width: 300px;
   }
   .steps.lead li { margin-bottom: 10px; }
+  /* The way out that needs no escape: shown on every failure screen. */
+  .hatch {
+    margin: 26px auto 0;
+    max-width: 300px;
+    font-size: 14px;
+    color: rgba(247,243,233,0.82);
+  }
+  .hatch p { margin: 0 0 10px; }
+  .ar-btn-quiet {
+    display: inline-block;
+    min-width: 220px;
+    padding: 12px 22px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--cream);
+    border: 1.5px solid var(--gold);
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .link-box {
+    display: block;
+    width: 100%;
+    margin: 10px 0 16px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(247,243,233,0.3);
+    background: rgba(0,0,0,0.18);
+    color: var(--cream);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    text-align: center;
+    -webkit-user-select: all;
+    user-select: all;
+  }
   .menu-hint {
     display: none;
     position: fixed;
@@ -163,6 +199,12 @@
     <div id="manual-action">
       <a class="ar-btn" id="manual-btn" href="#">Open App Store</a>
       <ul class="steps" id="manual-steps"></ul>
+      <div class="hatch" id="hatch" hidden>
+        <p id="hatch-lead">Still here? Copy this link and paste it into Safari:</p>
+        <button class="ar-btn-quiet" id="copy-btn" type="button">Copy link</button>
+        <input class="link-box" id="link-box" type="text" readonly aria-label="Link to this page">
+        <p>Or open the App Store and search <strong>“Sakina Islamic Wellness”</strong>.</p>
+      </div>
     </div>
   </div>
 
@@ -344,29 +386,48 @@
       manualWrap.classList.add('visible');
     }
 
+    // The way out when every escape has failed, or when this page has guessed
+    // wrong about where it is: a webview that sends Safari's exact UA cannot be
+    // told apart from Safari, so detection alone can never be enough. Pasting
+    // this page into Safari needs no escape, and neither does searching the
+    // App Store — no in-app browser can block either. The link is also shown
+    // as text, because some webviews block the clipboard; a long-press on the
+    // box still copies it. Its ?src= survives the paste.
+    function showHatch() {
+      var hatch = document.getElementById('hatch');
+      var copyBtn = document.getElementById('copy-btn');
+      var linkBox = document.getElementById('link-box');
+      linkBox.value = window.location.href;
+      linkBox.addEventListener('focus', function () { linkBox.select(); });
+      copyBtn.addEventListener('click', function () {
+        function manual() {
+          linkBox.focus();
+          linkBox.select();
+          copyBtn.textContent = 'Long-press the link below to copy';
+        }
+        if (!navigator.clipboard || !navigator.clipboard.writeText) return manual();
+        navigator.clipboard.writeText(window.location.href).then(function () {
+          copyBtn.textContent = 'Copied \u2014 paste it in Safari';
+        }).catch(manual);
+      });
+      hatch.hidden = false;
+    }
+
     // TikTok's iOS webview refuses to hand apps.apple.com to the App Store
     // ("Action can't be completed", real iPhone 2026-11-09), and the x-safari-
     // escape this page used to offer failed 131 of 133 times (2026-11-10..19).
-    // Its own ••• → Open in browser is the one way out, so those steps lead,
-    // an arrow points at the menu, and the button copies this page's link —
-    // ?src= intact — for pasting into Safari. Nothing here navigates.
+    // Its own ••• → Open in browser is the way out, so those steps lead and an
+    // arrow points at the menu; there is no escape button, only the hatch.
+    // Nothing here navigates.
     function showTikTokPrompt() {
       spinnerEl.style.display = 'none';
       statusEl.textContent = 'TikTok doesn\u2019t let links open the App Store. Open this page in your browser:';
       manualSteps.innerHTML = ['1. Tap \u2022\u2022\u2022 at the top right', '2. Choose \u201cOpen in browser\u201d']
         .map(function (s) { return '<li>' + s + '</li>'; }).join('');
       manualSteps.classList.add('lead');
-      manualWrap.insertBefore(manualSteps, manualBtn);
-      manualBtn.textContent = 'Copy link';
-      // If the clipboard is blocked, the tap just reloads this page.
-      manualBtn.setAttribute('href', window.location.href);
-      manualBtn.addEventListener('click', function (e) {
-        if (!navigator.clipboard || !navigator.clipboard.writeText) return;
-        e.preventDefault();
-        navigator.clipboard.writeText(window.location.href).then(function () {
-          manualBtn.textContent = 'Copied \u2014 paste it in Safari';
-        }).catch(function () { /* blocked: the steps above still work */ });
-      });
+      manualBtn.style.display = 'none';
+      document.getElementById('hatch-lead').textContent = 'No \u201cOpen in browser\u201d? Copy this link and paste it into Safari:';
+      showHatch();
       document.getElementById('menu-hint').classList.add('visible');
       manualWrap.classList.add('visible');
     }
@@ -383,8 +444,12 @@
         steps = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in external browser\u201d'];
       } else if (AppRedirect.isIOS() && AppRedirect.isFacebookInApp()) {
         steps = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in Safari\u201d'];
+      } else if (AppRedirect.isIOSWebView()) {
+        // An app's own browser this page does not know by name.
+        steps = ['Tap the \u2022\u2022\u2022 or share icon', 'Choose \u201cOpen in browser\u201d or \u201cOpen in Safari\u201d'];
       }
       manualSteps.innerHTML = steps.map(function (s) { return '<li>' + s + '</li>'; }).join('');
+      showHatch();
       manualWrap.classList.add('visible');
     }
 
