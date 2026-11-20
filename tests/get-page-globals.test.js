@@ -46,16 +46,16 @@ test('/get/ reports the automatic attempt before firing either escape', () => {
     ig.indexOf('reportAutoAttempt();') < ig.indexOf("location.href = 'instagram://extbrowser/"),
     'Instagram branch must report the attempt before escaping');
   const plain = run.slice(run.lastIndexOf('reportAutoAttempt();'));
-  assert.ok(plain.indexOf('window.location.replace(attributionLink)') > -1,
+  assert.ok(plain.indexOf('window.location.replace(autoUrl)') > -1,
     'plain-navigation branch must report the attempt before navigating');
   assert.match(page, /track\(A && A\.EVENTS\.redirectAttempted, context\('auto'\)\)/);
 });
 
 test('/get/ reports leaving, and whether the fallback had already been shown', () => {
   assert.match(page, /track\(A && A\.EVENTS\.redirectLeft, context\(outcome \|\| \(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)\)/);
-  // Every escape path but TikTok's watches with no outcome of its own.
+  // Every escape path, TikTok's included, watches with no outcome of its own.
   const calls = page.match(/watchForLeave\([^)]*\);/g) || [];
-  assert.deepEqual(calls.sort(), ["watchForLeave('tiktok_prompt');", 'watchForLeave();']);
+  assert.deepEqual(calls, ['watchForLeave();']);
   const timer = page.slice(page.indexOf('function armFallbackTimer'));
   assert.ok(timer.indexOf('fallbackShown = true;') > -1 &&
     timer.indexOf('fallbackShown = true;') < timer.indexOf('showManualFallback(targetUrl);'),
@@ -102,7 +102,7 @@ test('/get/ sends Android to Google Play, never to the App Store link', () => {
   assert.match(branch, /reportAutoAttempt\(\);/);
   assert.match(branch, /return;\s*}$/, 'the Android branch must end the run');
   assert.ok(run.indexOf('if (AppRedirect.isAndroid())') <
-    run.indexOf('window.location.replace(attributionLink)'),
+    run.indexOf('window.location.replace(autoUrl)'),
     'the Android branch must come before the plain-navigation branch');
 });
 
@@ -154,20 +154,24 @@ test('/get/ builds its store link from the reel or, failing that, the channel', 
 // TikTok refuses the plain store navigation ("Action can't be completed",
 // real iPhone 2026-11-09), so /get/ must not attempt it there: the visitor
 // gets the steps that work and a button that tries Safari on their tap.
-test('/get/ never auto-redirects inside TikTok on iOS', () => {
+// Yawm's /get/ (getyawm.com, the same design as this page) auto-opens the App
+// Store from TikTok with window.location.replace to the plain listing URL.
+// This page was blocked replacing to a Campaign Link instead. So TikTok gets
+// the ordinary auto attempt — measured like every other — aimed at the plain
+// listing, with the steps and the hatch behind the usual timer.
+test('/get/ auto-redirects TikTok to the plain listing, like Yawm', () => {
   const run = page.slice(page.indexOf('function run()'));
-  const at = run.indexOf('if (inTikTok())');
-  assert.ok(at > -1, 'iOS TikTok branch missing from run()');
-  assert.ok(at < run.indexOf('window.location.replace(attributionLink)'),
-    'the TikTok branch must come before the plain-navigation branch');
-  const branch = run.slice(at, run.indexOf('return;', at) + 7);
-  assert.match(branch, /showTikTokPrompt\(\);/);
-  // Its own outcome: a TikTok leave has no attempted{auto} to divide by.
-  assert.match(branch, /watchForLeave\('tiktok_prompt'\);/);
-  assert.match(page, /context\(outcome \|\| \(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)/);
-  assert.ok(at > run.indexOf('if (AppRedirect.isAndroid())'),
+  assert.match(run, /var autoUrl = inTikTok\(\) \? AppRedirect\.CONFIG\.ios\.storeUrl : attributionLink;/);
+  assert.match(run, /armFallbackTimer\(autoUrl, 1800\);\s*window\.location\.replace\(autoUrl\);/);
+  assert.doesNotMatch(page, /tiktok_prompt/);
+  assert.ok(run.indexOf('var autoUrl') > run.indexOf('if (AppRedirect.isAndroid())'),
     'Android returns first: Android TikTok keeps the Android path');
-  assert.doesNotMatch(branch, /location\.(replace|href)|reportAutoAttempt|armFallbackTimer/);
+});
+
+test('/get/ falls back to the TikTok steps when TikTok kept the page', () => {
+  const f = page.slice(page.indexOf('function showManualFallback'));
+  const body = f.slice(0, f.indexOf('\n    }\n') + 6);
+  assert.match(body, /if \(inTikTok\(\)\) return showTikTokPrompt\(\);/);
 });
 
 // A TikTok webview without TikTok's UA tokens got the plain redirect and its
@@ -226,8 +230,9 @@ test('/get/ tells a bare webview it does not recognise how to open the browser',
   assert.match(body, /AppRedirect\.isIOSWebView\(\)/);
 });
 
-test('/get/ shows no escape button inside TikTok', () => {
+test('/get/ TikTok button is a plain link to the plain listing, never an escape', () => {
   const f = page.slice(page.indexOf('function showTikTokPrompt'));
   const body = f.slice(0, f.indexOf('\n    }\n') + 6);
-  assert.match(body, /manualBtn\.style\.display = 'none'/);
+  assert.match(body, /manualBtn\.setAttribute\('href', AppRedirect\.CONFIG\.ios\.storeUrl\)/);
+  assert.doesNotMatch(body, /bindElement|x-safari-|manualBtn\.style\.display/);
 });

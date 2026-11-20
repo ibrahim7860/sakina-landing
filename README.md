@@ -30,16 +30,19 @@ wins over its `src`, so reels keep their own campaign. Pick `src` values you
 are happy to see as campaign names: letters, digits, `_` and `-`, up to 40.
 
 **TikTok:** use `https://ibrahim7860.github.io/sakina-landing/get/?src=tiktok`,
-never a direct App Store link. TikTok's in-app browser refuses to open the App
-Store ("Action can't be completed" on a blank page, real iPhone 2026-11-09), and
-no escape gets out of it: an `x-safari-` button failed 131 of 133 taps
-(2026-11-10..19). So `/get/` does not redirect inside TikTok. It leads with the
-manual steps (••• → Open in browser), an arrow at the menu, and a **Copy link**
-button; Safari then runs the normal redirect. A TikTok webview without TikTok's
-UA tokens is caught by `?src=tiktok` plus a non-Safari UA and reported as
-`in_app_browser=tiktok_unrecognized`. Read it as `landing_viewed{in_app_browser=tiktok}` against
-`landing_redirect_left{tiktok_prompt}` (an upper bound: closing the webview
-also counts), never in the `attempted{auto}` ratio below.
+never a direct App Store link. Inside TikTok, `/get/` auto-redirects to the
+**plain listing URL** (`apps.apple.com/us/app/…/id…`), never a Campaign Link:
+Yawm's identical page (getyawm.com/get/) opens the App Store from TikTok that
+way, while this page was blocked ("Action can't be completed") redirecting to
+`/app/apple-store/id…?pt=&ct=&mt=8`. So TikTok installs do not show under
+`ct=tiktok` in App Analytics; Mixpanel still has the channel. If TikTok keeps
+the page, it shows the ••• → Open in browser steps, an App Store button, Copy
+link, and "search Sakina Islamic Wellness". An `x-safari-` escape failed 131 of
+133 taps there (2026-11-10..19) and is not used. A TikTok webview without
+TikTok's UA tokens is caught by `?src=tiktok` plus a non-Safari UA and reported
+as `in_app_browser=tiktok_unrecognized`.
+Read it like every other auto attempt: `left{before_fallback}` ÷
+`attempted{auto}` with `in_app_browser=tiktok` (or `tiktok_unrecognized`).
 
 The final check can only be done on a real phone: tap the link **inside actual
 Instagram**, tap **Open** on Instagram's "open an app outside of Instagram?"

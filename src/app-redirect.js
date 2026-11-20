@@ -122,8 +122,10 @@
 
   function isTikTokInApp() {
     // musical_ly_<ver> (iOS) / trill_<ver> + AppName/musical_ly (Android) are
-    // TikTok's own app tokens; BytedanceWebview is its webview on both.
-    return /musical_ly|BytedanceWebview|\btrill_/i.test(getUA());
+    // TikTok's own app tokens; BytedanceWebview is its webview on both. A bare
+    // "TikTok" token too (Yawm's detector matches it): a TikTok webview with
+    // none of the others reached /get/ as Safari (screenshot, 2026-11-19).
+    return /musical_ly|BytedanceWebview|\btrill_|TikTok/i.test(getUA());
   }
 
   /**
@@ -175,8 +177,8 @@
     if (isIOS() && isTikTokInApp()) {
       // Nothing gets out of TikTok's iOS webview. It refuses apps.apple.com
       // ("Action can't be completed"), and x-safari- failed 131 of 133 times
-      // (Mixpanel, 2026-11-10..19). Only its own ••• → Open in browser works,
-      // so handleStoreClick shows that instead.
+      // (Mixpanel, 2026-11-10..19). handleStoreClick makes a plain navigation
+      // to the plain listing instead.
       return false;
     }
 
@@ -353,10 +355,14 @@
     }
 
     if (isIOS() && isTikTokInApp()) {
-      // No escape exists here (see fireEscape), and the plain navigation is
-      // the one TikTok blocks: go straight to the steps that work.
+      // The plain listing, in this tap's own gesture. Yawm's page (the same
+      // design as /get/) opens the App Store from TikTok this way; ours was
+      // blocked navigating to a Campaign Link. No escape exists here (see
+      // fireEscape), so the sheet has no "Try again": the button is the retry.
       event.preventDefault();
-      showFallbackModal({ targetUrl: targetUrl });
+      report('redirect_attempted', escapeContext());
+      armFallback(CONFIG.ios.storeUrl, null);
+      location.href = CONFIG.ios.storeUrl;
       return;
     }
 
@@ -367,7 +373,18 @@
 
     event.preventDefault();
     report('redirect_attempted', escapeContext());
+    armFallback(targetUrl, function () {
+      fireEscape(targetUrl);
+    });
+  }
 
+  /**
+   * Shows the fallback sheet unless the page is hidden, unloaded or blurred
+   * within CONFIG.escapeTimeoutMs of an attempt.
+   * @param {string} targetUrl
+   * @param {(() => void)|null} onRetry
+   */
+  function armFallback(targetUrl, onRetry) {
     var settled = false;
     var timer = setTimeout(function () {
       if (settled) return;
@@ -376,12 +393,7 @@
       // The modal appearing IS the failure signal: no visibilitychange,
       // pagehide or blur arrived, so the escape never left the webview.
       report('redirect_failed', escapeContext());
-      showFallbackModal({
-        targetUrl: targetUrl,
-        onRetry: function () {
-          fireEscape(targetUrl);
-        }
-      });
+      showFallbackModal(onRetry ? { targetUrl: targetUrl, onRetry: onRetry } : { targetUrl: targetUrl });
     }, CONFIG.escapeTimeoutMs);
 
     function onSignal() {

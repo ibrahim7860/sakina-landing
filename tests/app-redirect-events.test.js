@@ -146,7 +146,13 @@ test('a throwing reporter never breaks the escape', () => {
 // taps failed), so a store tap there goes straight to the manual steps: the
 // tap must not navigate, must not "attempt" anything, and the sheet must not
 // offer a "Try again" that repeats the blocked escape.
-test('an iOS TikTok store tap shows the manual steps at once, with no retry', () => {
+// Yawm's page (getyawm.com/get/, same design as ours) opens the App Store from
+// TikTok with a plain navigation to the plain listing URL. Ours was blocked
+// navigating to a Campaign Link (/app/apple-store/id…?pt=&ct=&mt=8). So a
+// TikTok tap navigates to the plain listing, in the tap's own gesture, and
+// only if nothing leaves does the sheet appear — with no "Try again", since
+// retrying is just tapping the button again.
+test('an iOS TikTok store tap goes to the plain listing, then the steps if it stays', async () => {
   setBrowserGlobals();
   const html = [];
   const realCreate = document.createElement;
@@ -160,18 +166,21 @@ test('an iOS TikTok store tap shows the manual steps at once, with no retry', ()
   let opened = null;
   window.open = (url) => { opened = url; };
   const R = freshModule();
+  R.CONFIG.escapeTimeoutMs = 5;
   const events = [];
-  R.CONFIG.onEvent = (name) => events.push(name);
+  R.CONFIG.onEvent = (name, props) => events.push({ name, props });
   const e = fakeEvent();
-  R.handleStoreClick(e, STORE);
-  assert.equal(e.defaultPrevented, true, 'the plain store navigation is the one TikTok blocks');
-  assert.equal(opened, null);
-  assert.equal(location.href, '');
-  assert.deepEqual(events, [], 'nothing was attempted, so nothing is reported as attempted or failed');
+  R.handleStoreClick(e, 'https://apps.apple.com/app/apple-store/id1?pt=1&ct=tiktok&mt=8');
+  assert.equal(location.href, R.CONFIG.ios.storeUrl, 'the plain listing, never a Campaign Link');
+  assert.equal(opened, null, 'x-safari- failed 131 of 133 times in TikTok');
+  assert.equal(e.defaultPrevented, true);
+  assert.equal(html.join(''), '', 'no sheet before the navigation has had its chance');
+  await new Promise((r) => setTimeout(r, 30));
+  assert.deepEqual(events.map((x) => x.name), ['redirect_attempted', 'redirect_failed']);
+  assert.equal(events[0].props.in_app_browser, 'tiktok');
   const sheet = html.join('');
   assert.match(sheet, /Open in browser/);
   assert.doesNotMatch(sheet, /Try again/);
-  // The way out that no webview can block.
   assert.match(sheet, /Sakina Islamic Wellness/);
 });
 

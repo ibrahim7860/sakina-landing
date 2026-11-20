@@ -413,19 +413,20 @@
       hatch.hidden = false;
     }
 
-    // TikTok's iOS webview refuses to hand apps.apple.com to the App Store
-    // ("Action can't be completed", real iPhone 2026-11-09), and the x-safari-
-    // escape this page used to offer failed 131 of 133 times (2026-11-10..19).
-    // Its own ••• → Open in browser is the way out, so those steps lead and an
-    // arrow points at the menu; there is no escape button, only the hatch.
-    // Nothing here navigates.
+    // TikTok kept the page: the automatic redirect did not leave. The x-safari-
+    // escape failed 131 of 133 times here (2026-11-10..19), so there is none;
+    // TikTok's own ••• → Open in browser leads, an arrow points at the menu,
+    // and the button is a plain link to the plain listing (a tap is its own
+    // gesture), with the hatch below.
     function showTikTokPrompt() {
       spinnerEl.style.display = 'none';
-      statusEl.textContent = 'TikTok doesn\u2019t let links open the App Store. Open this page in your browser:';
+      statusEl.textContent = 'TikTok didn\u2019t open the App Store. Open this page in your browser:';
       manualSteps.innerHTML = ['1. Tap \u2022\u2022\u2022 at the top right', '2. Choose \u201cOpen in browser\u201d']
         .map(function (s) { return '<li>' + s + '</li>'; }).join('');
       manualSteps.classList.add('lead');
-      manualBtn.style.display = 'none';
+      manualWrap.insertBefore(manualSteps, manualBtn);
+      manualBtn.textContent = 'Open App Store';
+      manualBtn.setAttribute('href', AppRedirect.CONFIG.ios.storeUrl);
       document.getElementById('hatch-lead').textContent = 'No \u201cOpen in browser\u201d? Copy this link and paste it into Safari:';
       showHatch();
       document.getElementById('menu-hint').classList.add('visible');
@@ -433,6 +434,7 @@
     }
 
     function showManualFallback(targetUrl) {
+      if (inTikTok()) return showTikTokPrompt();
       spinnerEl.style.display = 'none';
       statusEl.textContent = 'Tap below to continue.';
       manualBtn.setAttribute('data-store-url', targetUrl);
@@ -576,19 +578,6 @@
         return;
       }
 
-      // iOS TikTok: no automatic attempt — the plain redirect below is exactly
-      // the navigation TikTok blocks, and it would leave a blank page behind
-      // TikTok's error toast. No reportAutoAttempt either, and the leave is
-      // its own outcome, so left{before|after_fallback} ÷ attempted{auto}
-      // stays a measure of the escapes that do run. left{tiktok_prompt} is an
-      // upper bound: closing the webview to go back to the feed hides the page
-      // too.
-      if (inTikTok()) {
-        showTikTokPrompt();
-        watchForLeave('tiktok_prompt');
-        return;
-      }
-
       // iOS Instagram/Threads: beacon first (best-effort, matched
       // probabilistically), then escape with the RAW store URL — NOT the
       // attribution link — since a tracking redirect would add an "Open in App
@@ -618,9 +607,19 @@
       // the 1.8s timer below correctly falls through to the manual
       // button — whose click *does* have the user gesture that the
       // x-safari- escape requires.)
+      //
+      // TikTok lands here too, aimed at the plain listing URL. Yawm's /get/
+      // (getyawm.com, the same design as this page) auto-opens the App Store
+      // from TikTok with exactly this replace to its plain listing; this page
+      // was blocked ("Action can't be completed") replacing to a Campaign Link
+      // (/app/apple-store/id…?pt=&ct=&mt=8). The cost is ct=tiktok in App
+      // Analytics; Mixpanel still has the channel. Measured like every other
+      // auto attempt: left{before_fallback} ÷ attempted{auto}, in_app_browser
+      // tiktok or tiktok_unrecognized.
+      var autoUrl = inTikTok() ? AppRedirect.CONFIG.ios.storeUrl : attributionLink;
       reportAutoAttempt();
-      armFallbackTimer(attributionLink, 1800);
-      window.location.replace(attributionLink);
+      armFallbackTimer(autoUrl, 1800);
+      window.location.replace(autoUrl);
     }
 
     run();
