@@ -31,10 +31,13 @@ are happy to see as campaign names: letters, digits, `_` and `-`, up to 40.
 
 **TikTok:** use `https://ibrahim7860.github.io/sakina-landing/get/?src=tiktok`,
 never a direct App Store link. TikTok's in-app browser refuses to open the App
-Store ("Action can't be completed" on a blank page, real iPhone 2026-11-09), so
-`/get/` does not redirect inside TikTok. It shows an **Open in Safari** button
-and the manual steps (••• → Open in browser); Safari then runs the normal
-redirect. Read it as `landing_viewed{in_app_browser=tiktok}` against
+Store ("Action can't be completed" on a blank page, real iPhone 2026-11-09), and
+no escape gets out of it: an `x-safari-` button failed 131 of 133 taps
+(2026-11-10..19). So `/get/` does not redirect inside TikTok. It leads with the
+manual steps (••• → Open in browser), an arrow at the menu, and a **Copy link**
+button; Safari then runs the normal redirect. A TikTok webview without TikTok's
+UA tokens is caught by `?src=tiktok` plus a non-Safari UA and reported as
+`in_app_browser=tiktok_unrecognized`. Read it as `landing_viewed{in_app_browser=tiktok}` against
 `landing_redirect_left{tiktok_prompt}` (an upper bound: closing the webview
 also counts), never in the `attempted{auto}` ratio below.
 

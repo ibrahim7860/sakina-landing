@@ -2,7 +2,8 @@
  * app-redirect.js
  * -----------------------------------------------------------------------
  * One-click "go to app store" system that survives Instagram / Facebook /
- * Messenger / Threads / TikTok in-app browsers, plus Android webviews.
+ * Messenger / Threads in-app browsers, plus Android webviews. TikTok's iOS
+ * webview has no escape; it gets the manual steps.
  *
  * Zero dependencies. Works as a plain <script> tag or an ES module.
  *
@@ -125,6 +126,17 @@
     return /musical_ly|BytedanceWebview|\btrill_/i.test(getUA());
   }
 
+  /**
+   * An iOS app's own WKWebView, whoever the app is. Safari, Chrome, Firefox,
+   * Edge and SFSafariViewController all send a "Safari/" token; a bare
+   * webview does not. A TikTok webview without TikTok's tokens reached /get/
+   * as plain Safari (screenshot, 2026-11-19), so /get/ pairs this with
+   * ?src=tiktok to recognise it.
+   */
+  function isIOSWebView() {
+    return isIOS() && !/Safari\//.test(getUA());
+  }
+
   function isInAppBrowser() {
     return isInstagramInApp() || isFacebookInApp() || isTikTokInApp();
   }
@@ -160,11 +172,17 @@
       return true;
     }
 
-    if (isIOS() && (isFacebookInApp() || isTikTokInApp())) {
+    if (isIOS() && isTikTokInApp()) {
+      // Nothing gets out of TikTok's iOS webview. It refuses apps.apple.com
+      // ("Action can't be completed"), and x-safari- failed 131 of 133 times
+      // (Mixpanel, 2026-11-10..19). Only its own ••• → Open in browser works,
+      // so handleStoreClick shows that instead.
+      return false;
+    }
+
+    if (isIOS() && isFacebookInApp()) {
       // Only works inside a user-gesture. Caller is responsible for
-      // ensuring this runs synchronously inside a click handler. TikTok
-      // refuses a plain apps.apple.com navigation outright ("Action can't be
-      // completed"), so Safari is the only door worth trying there too.
+      // ensuring this runs synchronously inside a click handler.
       window.open('x-safari-' + targetUrl, '_blank');
       return true;
     }
@@ -251,7 +269,8 @@
   /**
    * @param {object} opts
    * @param {string} opts.targetUrl
-   * @param {() => void} opts.onRetry
+   * @param {() => void} [opts.onRetry] Omitted where no escape can work, so
+   *   the sheet offers no "Try again" that would only repeat the failure.
    */
   function showFallbackModal(opts) {
     injectModalStyles();
@@ -276,9 +295,11 @@
       '<div class="ar-sheet">' +
       '<button class="ar-close" type="button" aria-label="Close">\u00d7</button>' +
       '<h2>Almost there</h2>' +
-      '<p>This app can\u2019t open the App Store directly from here. Try again, or follow these steps:</p>' +
+      (opts.onRetry
+        ? '<p>This app can\u2019t open the App Store directly from here. Try again, or follow these steps:</p>'
+        : '<p>This app can\u2019t open the App Store directly from here. Open this page in your browser instead:</p>') +
       '<ol><li>' + manualSteps + '</li><li>Tap the download button again from your browser.</li></ol>' +
-      '<button class="ar-btn ar-btn-primary" type="button" data-ar-action="retry">Try again</button>' +
+      (opts.onRetry ? '<button class="ar-btn ar-btn-primary" type="button" data-ar-action="retry">Try again</button>' : '') +
       '<a class="ar-btn ar-btn-secondary" data-ar-action="copy" href="' + opts.targetUrl + '" target="_blank" rel="noopener">Copy link</a>' +
       '</div>';
 
@@ -287,10 +308,13 @@
     overlay.querySelector('.ar-close').addEventListener('click', function () {
       overlay.remove();
     });
-    overlay.querySelector('[data-ar-action="retry"]').addEventListener('click', function () {
-      overlay.remove();
-      opts.onRetry();
-    });
+    var retry = overlay.querySelector('[data-ar-action="retry"]');
+    if (retry) {
+      retry.addEventListener('click', function () {
+        overlay.remove();
+        opts.onRetry();
+      });
+    }
     overlay.querySelector('[data-ar-action="copy"]').addEventListener('click', function (e) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         e.preventDefault();
@@ -324,6 +348,14 @@
     if (!isInAppBrowser() && !(isAndroid() && CONFIG.android.packageName)) {
       // Normal browser (or Android with no app yet): let the real href
       // navigate as usual. Nothing to intercept.
+      return;
+    }
+
+    if (isIOS() && isTikTokInApp()) {
+      // No escape exists here (see fireEscape), and the plain navigation is
+      // the one TikTok blocks: go straight to the steps that work.
+      event.preventDefault();
+      showFallbackModal({ targetUrl: targetUrl });
       return;
     }
 
@@ -426,6 +458,7 @@
     isInstagramInApp: isInstagramInApp,
     isFacebookInApp: isFacebookInApp,
     isTikTokInApp: isTikTokInApp,
+    isIOSWebView: isIOSWebView,
     isInAppBrowser: isInAppBrowser,
     inAppBrowserName: inAppBrowserName,
     fireEscape: fireEscape,

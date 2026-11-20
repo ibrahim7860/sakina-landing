@@ -127,12 +127,33 @@
     max-width: 280px;
   }
   .steps li { margin-bottom: 4px; }
+  /* TikTok: the menu steps are the way out, so they lead, above the button. */
+  .steps.lead {
+    margin: 0 auto 22px;
+    font-size: 17px;
+    color: var(--cream);
+    max-width: 300px;
+  }
+  .steps.lead li { margin-bottom: 10px; }
+  .menu-hint {
+    display: none;
+    position: fixed;
+    top: 8px;
+    right: 18px;
+    font-size: 30px;
+    color: var(--gold);
+    animation: nudge 1.2s ease-in-out infinite;
+  }
+  .menu-hint.visible { display: block; }
+  @keyframes nudge { 50% { transform: translate(4px, -4px); } }
   @media (prefers-reduced-motion: reduce) {
     .spinner { animation: none; border-top-color: var(--gold); }
+    .menu-hint { animation: none; }
   }
 </style>
 </head>
 <body>
+  <div class="menu-hint" id="menu-hint" aria-hidden="true">&#8599;</div>
   <div class="wrap">
     <div class="mark" aria-hidden="true">&#9770;</div>
     <h1>Opening Sakina</h1>
@@ -243,12 +264,30 @@
       } catch (e) { /* swallowed on purpose */ }
     }
 
+    // TikTok's own UA tokens, or a bare iOS webview opened from the TikTok
+    // link. A TikTok webview carrying none of the tokens got the plain
+    // redirect and TikTok's "Action can't be completed" (screenshot,
+    // 2026-11-19; 27 redirect_failed from ?src=tiktok visits that reported
+    // in_app_browser=none). Safari after "Open in browser" sends "Safari/", so
+    // it still redirects; another app's webview is named by its own tokens.
+    function inTikTok() {
+      if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp()) return true;
+      return (getChannel() || '').toLowerCase() === 'tiktok' &&
+        AppRedirect.isIOSWebView() && AppRedirect.inAppBrowserName() === 'none';
+    }
+
+    // Reported apart from 'tiktok', so the data shows how many TikTok visits
+    // the UA check alone misses.
+    var IN_APP_BROWSER = AppRedirect.inAppBrowserName() === 'none' && inTikTok()
+      ? 'tiktok_unrecognized'
+      : AppRedirect.inAppBrowserName();
+
     /** The context every event on this page carries, plus an optional outcome. */
     function context(outcome) {
       var props = {
         channel: getChannel() || 'none',
         platform: platform(),
-        in_app_browser: AppRedirect.inAppBrowserName(),
+        in_app_browser: IN_APP_BROWSER,
         reel: REEL_ID || 'none'
       };
       if (outcome) props.outcome = outcome;
@@ -305,20 +344,30 @@
       manualWrap.classList.add('visible');
     }
 
-    // TikTok's webview refuses to hand apps.apple.com to the App Store: a real
-    // iPhone (2026-11-09) showed "Action can't be completed" on a blank page.
-    // So nothing navigates on arrival; the visitor sees the menu item that
-    // works, and the button tries Safari directly (x-safari-, which needs the
-    // tap's own user gesture — see AppRedirect.fireEscape).
-    function showTikTokPrompt(targetUrl) {
+    // TikTok's iOS webview refuses to hand apps.apple.com to the App Store
+    // ("Action can't be completed", real iPhone 2026-11-09), and the x-safari-
+    // escape this page used to offer failed 131 of 133 times (2026-11-10..19).
+    // Its own ••• → Open in browser is the one way out, so those steps lead,
+    // an arrow points at the menu, and the button copies this page's link —
+    // ?src= intact — for pasting into Safari. Nothing here navigates.
+    function showTikTokPrompt() {
       spinnerEl.style.display = 'none';
-      statusEl.textContent = 'TikTok can\u2019t open the App Store. Tap below, or open this page in your browser:';
-      manualBtn.textContent = 'Open in Safari';
-      manualBtn.setAttribute('data-store-url', targetUrl);
-      manualBtn.setAttribute('href', targetUrl);
-      AppRedirect.bindElement(manualBtn);
-      manualSteps.innerHTML = ['Tap the \u2022\u2022\u2022 menu at the top right', 'Choose \u201cOpen in browser\u201d']
+      statusEl.textContent = 'TikTok doesn\u2019t let links open the App Store. Open this page in your browser:';
+      manualSteps.innerHTML = ['1. Tap \u2022\u2022\u2022 at the top right', '2. Choose \u201cOpen in browser\u201d']
         .map(function (s) { return '<li>' + s + '</li>'; }).join('');
+      manualSteps.classList.add('lead');
+      manualWrap.insertBefore(manualSteps, manualBtn);
+      manualBtn.textContent = 'Copy link';
+      // If the clipboard is blocked, the tap just reloads this page.
+      manualBtn.setAttribute('href', window.location.href);
+      manualBtn.addEventListener('click', function (e) {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+        e.preventDefault();
+        navigator.clipboard.writeText(window.location.href).then(function () {
+          manualBtn.textContent = 'Copied \u2014 paste it in Safari';
+        }).catch(function () { /* blocked: the steps above still work */ });
+      });
+      document.getElementById('menu-hint').classList.add('visible');
       manualWrap.classList.add('visible');
     }
 
@@ -469,8 +518,8 @@
       // stays a measure of the escapes that do run. left{tiktok_prompt} is an
       // upper bound: closing the webview to go back to the feed hides the page
       // too.
-      if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp()) {
-        showTikTokPrompt(IOS_STORE_URL);
+      if (inTikTok()) {
+        showTikTokPrompt();
         watchForLeave('tiktok_prompt');
         return;
       }

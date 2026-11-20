@@ -271,17 +271,34 @@ test('TikTok counts as an in-app browser', () => {
   assert.equal(freshModule().isInAppBrowser(), true);
 });
 
-test('fireEscape tries Safari via window.open("x-safari-...") on iOS TikTok', () => {
+// x-safari- does not get out of TikTok either: 131 of 133 "Open in Safari"
+// taps on /get/ ended in redirect_failed (Mixpanel, 2026-11-10..19), and the
+// two that "left" are as likely the visitor closing the webview. No escape is
+// known to work from TikTok's iOS webview, so none is fired.
+test('fireEscape fires nothing on iOS TikTok: no escape works there', () => {
   setNavigator({ userAgent: UA.iosTikTok });
   const loc = setLocation();
   const AR = freshModule();
-  let openedUrl = null;
-  global.window = { open: (url) => { openedUrl = url; } };
-  const target = 'https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820';
-  assert.equal(AR.fireEscape(target), true);
-  assert.equal(openedUrl, 'x-safari-' + target);
+  let opened = null;
+  global.window = { open: (url) => { opened = url; } };
+  assert.equal(AR.fireEscape('https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820'), false);
+  assert.equal(opened, null, 'x-safari- failed 131 of 133 times in TikTok');
   assert.equal(loc.href, '', 'never a plain navigation: that is the one TikTok blocks');
   delete global.window;
+});
+
+// Screenshot from TikTok, 2026-11-19: the generic "Tap below to continue"
+// fallback, so a TikTok webview whose UA carried none of TikTok's tokens.
+// Safari, Chrome, Firefox and SFSafariViewController all send "Safari/";
+// an app's bare WKWebView does not.
+test('isIOSWebView true for a bare iOS WKWebView, false for real browsers', () => {
+  const realSafari = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+  const chromeIOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1';
+  const bareWebView = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
+  for (const [ua, want] of [[bareWebView, true], [UA.iosTikTok, true], [realSafari, false], [chromeIOS, false], [UA.androidChrome, false]]) {
+    setNavigator({ userAgent: ua });
+    assert.equal(freshModule().isIOSWebView(), want, ua);
+  }
 });
 
 test('inAppBrowserName names every webview the pages report', () => {

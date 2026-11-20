@@ -156,12 +156,12 @@ test('/get/ builds its store link from the reel or, failing that, the channel', 
 // gets the steps that work and a button that tries Safari on their tap.
 test('/get/ never auto-redirects inside TikTok on iOS', () => {
   const run = page.slice(page.indexOf('function run()'));
-  const at = run.indexOf('if (AppRedirect.isIOS() && AppRedirect.isTikTokInApp())');
+  const at = run.indexOf('if (inTikTok())');
   assert.ok(at > -1, 'iOS TikTok branch missing from run()');
   assert.ok(at < run.indexOf('window.location.replace(attributionLink)'),
     'the TikTok branch must come before the plain-navigation branch');
   const branch = run.slice(at, run.indexOf('return;', at) + 7);
-  assert.match(branch, /showTikTokPrompt\(IOS_STORE_URL\);/);
+  assert.match(branch, /showTikTokPrompt\(\);/);
   // Its own outcome: a TikTok leave has no attempted{auto} to divide by.
   assert.match(branch, /watchForLeave\('tiktok_prompt'\);/);
   assert.match(page, /context\(outcome \|\| \(fallbackShown \? 'after_fallback' : 'before_fallback'\)\)/);
@@ -170,11 +170,32 @@ test('/get/ never auto-redirects inside TikTok on iOS', () => {
   assert.doesNotMatch(branch, /location\.(replace|href)|reportAutoAttempt|armFallbackTimer/);
 });
 
-test('/get/ tells TikTok visitors which menu item works', () => {
+// A TikTok webview without TikTok's UA tokens got the plain redirect and its
+// "Action can't be completed" (screenshot, 2026-11-19; 27 redirect_failed from
+// ?src=tiktok visits that reported in_app_browser=none). The link itself says
+// TikTok, and a bare WKWebView is not Safari, so the pair is enough.
+test('/get/ treats a bare iOS webview opened from the TikTok link as TikTok', () => {
+  const fn = page.slice(page.indexOf('function inTikTok()'));
+  const body = fn.slice(0, fn.indexOf('\n    }\n') + 6);
+  assert.match(body, /AppRedirect\.isIOS\(\) && AppRedirect\.isTikTokInApp\(\)/);
+  assert.match(body, /AppRedirect\.isIOSWebView\(\)/);
+  assert.match(body, /\(getChannel\(\) \|\| ''\)\.toLowerCase\(\) === 'tiktok'/);
+  // Reported apart, so the next deploy shows how many TikTok visits the UA
+  // check alone would have missed.
+  assert.match(page, /'tiktok_unrecognized'/);
+});
+
+// The "Open in Safari" button fired x-safari-, which failed 131 of 133 times,
+// and then a sheet whose "Try again" fired it again. TikTok gets no escape
+// button: the menu steps lead, and the button copies this page's link (its
+// ?src= intact) for pasting into Safari.
+test('/get/ gives TikTok the menu steps and a copy button, never an escape', () => {
   const fn = page.slice(page.indexOf('function showTikTokPrompt'));
   const body = fn.slice(0, fn.indexOf('\n    }\n') + 6);
   assert.match(body, /Open in browser/);
-  assert.match(body, /AppRedirect\.bindElement\(manualBtn\)/);
+  assert.doesNotMatch(body, /bindElement|Open in Safari|x-safari-/);
+  assert.match(body, /navigator\.clipboard\.writeText\(window\.location\.href\)/);
+  assert.doesNotMatch(page, /'Open in Safari'/);
 });
 
 test('/get/ names the webview through app-redirect.js, not its own list', () => {
