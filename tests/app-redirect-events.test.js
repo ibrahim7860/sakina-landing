@@ -142,16 +142,35 @@ test('a throwing reporter never breaks the escape', () => {
     'the escape still took over the click, which is the behaviour that matters');
 });
 
-test('a TikTok escape attempt reports the TikTok webview', () => {
+// TikTok's iOS webview blocks the store and every escape (131 of 133 x-safari-
+// taps failed), so a store tap there goes straight to the manual steps: the
+// tap must not navigate, must not "attempt" anything, and the sheet must not
+// offer a "Try again" that repeats the blocked escape.
+test('an iOS TikTok store tap shows the manual steps at once, with no retry', () => {
   setBrowserGlobals();
+  const html = [];
+  const realCreate = document.createElement;
+  document.createElement = () => {
+    const node = realCreate();
+    Object.defineProperty(node, 'innerHTML', { set(v) { html.push(v); }, get() { return html.join(''); } });
+    node.querySelector = (sel) => (sel.indexOf('retry') > -1 ? null : node);
+    return node;
+  };
   setNavigator({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 musical_ly_34.1.0 BytedanceWebview/d8a21c6' });
+  let opened = null;
+  window.open = (url) => { opened = url; };
   const R = freshModule();
   const events = [];
-  R.CONFIG.onEvent = (name, props) => events.push({ name, props });
-  R.handleStoreClick(fakeEvent(), STORE);
-  const attempted = events.find((e) => e.name === 'redirect_attempted');
-  assert.ok(attempted);
-  assert.equal(attempted.props.in_app_browser, 'tiktok');
+  R.CONFIG.onEvent = (name) => events.push(name);
+  const e = fakeEvent();
+  R.handleStoreClick(e, STORE);
+  assert.equal(e.defaultPrevented, true, 'the plain store navigation is the one TikTok blocks');
+  assert.equal(opened, null);
+  assert.equal(location.href, '');
+  assert.deepEqual(events, [], 'nothing was attempted, so nothing is reported as attempted or failed');
+  const sheet = html.join('');
+  assert.match(sheet, /Open in browser/);
+  assert.doesNotMatch(sheet, /Try again/);
 });
 
 test('Android TikTok with no Play package keeps the plain link', () => {
