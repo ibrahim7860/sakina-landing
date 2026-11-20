@@ -194,11 +194,40 @@ test('/get/ gives TikTok the menu steps and a copy button, never an escape', () 
   const body = fn.slice(0, fn.indexOf('\n    }\n') + 6);
   assert.match(body, /Open in browser/);
   assert.doesNotMatch(body, /bindElement|Open in Safari|x-safari-/);
-  assert.match(body, /navigator\.clipboard\.writeText\(window\.location\.href\)/);
   assert.doesNotMatch(page, /'Open in Safari'/);
 });
 
 test('/get/ names the webview through app-redirect.js, not its own list', () => {
   assert.match(page, /AppRedirect\.inAppBrowserName\(\)/);
   assert.doesNotMatch(page, /function inAppBrowser\(/);
+});
+
+// Whatever the detection gets wrong — a webview that sends Safari's exact UA
+// cannot be told apart from Safari — every failure screen must still hold a
+// way out that needs no escape at all: the link to paste into Safari (as a
+// button, and as text to long-press when the clipboard is blocked), and the
+// App Store search, which no in-app browser can block.
+test('/get/ always ends in a way out that needs no escape', () => {
+  assert.match(page, /search <strong>“Sakina Islamic Wellness”<\/strong>/);
+  const hatch = page.slice(page.indexOf('function showHatch'));
+  const body = hatch.slice(0, hatch.indexOf('\n    }\n') + 6);
+  assert.match(body, /linkBox\.value = window\.location\.href/);
+  assert.match(body, /navigator\.clipboard\.writeText\(window\.location\.href\)/);
+  assert.match(body, /linkBox\.select\(\)/, 'a blocked clipboard falls back to the selected link');
+  for (const fn of ['function showTikTokPrompt', 'function showManualFallback']) {
+    const f = page.slice(page.indexOf(fn));
+    assert.match(f.slice(0, f.indexOf('\n    }\n') + 6), /showHatch\(\);/, fn + ' must show the way out');
+  }
+});
+
+test('/get/ tells a bare webview it does not recognise how to open the browser', () => {
+  const f = page.slice(page.indexOf('function showManualFallback'));
+  const body = f.slice(0, f.indexOf('\n    }\n') + 6);
+  assert.match(body, /AppRedirect\.isIOSWebView\(\)/);
+});
+
+test('/get/ shows no escape button inside TikTok', () => {
+  const f = page.slice(page.indexOf('function showTikTokPrompt'));
+  const body = f.slice(0, f.indexOf('\n    }\n') + 6);
+  assert.match(body, /manualBtn\.style\.display = 'none'/);
 });

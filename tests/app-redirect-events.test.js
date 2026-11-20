@@ -171,6 +171,8 @@ test('an iOS TikTok store tap shows the manual steps at once, with no retry', ()
   const sheet = html.join('');
   assert.match(sheet, /Open in browser/);
   assert.doesNotMatch(sheet, /Try again/);
+  // The way out that no webview can block.
+  assert.match(sheet, /Sakina Islamic Wellness/);
 });
 
 test('Android TikTok with no Play package keeps the plain link', () => {
