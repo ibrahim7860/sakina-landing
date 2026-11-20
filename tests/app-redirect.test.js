@@ -259,6 +259,14 @@ test('isTikTokInApp true for the iOS and Android TikTok webviews', () => {
   }
 });
 
+// Yawm's detector also matches a bare "TikTok" token; a TikTok webview with
+// none of musical_ly / trill_ / BytedanceWebview reached /get/ as Safari
+// (screenshot, 2026-11-19).
+test('isTikTokInApp true for a UA that only says TikTok', () => {
+  setNavigator({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 TikTok/42.1.0' });
+  assert.equal(freshModule().isTikTokInApp(), true);
+});
+
 test('isTikTokInApp false outside TikTok', () => {
   for (const ua of [UA.iosSafari, UA.iosInstagram, UA.iosFacebook, UA.androidChrome, UA.desktopChrome]) {
     setNavigator({ userAgent: ua });
