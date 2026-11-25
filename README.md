@@ -94,6 +94,8 @@ ones carrying a `reel` property.
 | `src/app-redirect.js` | The escape system itself. Zero dependencies, UMD |
 | `src/landing-analytics.js` | Mixpanel `/track` calls for landing + redirect events |
 | `src/waitlist.js` | Android waitlist signup, posted to Supabase PostgREST |
+| `n/q7rk2m9xw4/index.html` | The founders' reply desk for in-app feedback (unlinked, `noindex`) — see below |
+| `src/feedback-desk.js` | The desk itself: magic-link sign-in, the notes list, one note, reply and status. Zero dependencies, UMD |
 | `tests/` | `node:test` suites over `src/` and the `index.html` glue |
 | `assets/` | Logo, mark, store badges, and the link-preview card |
 | `assets/screens/` | Real 1.3.0 app captures used by the "See it in action" row |
@@ -181,6 +183,27 @@ fail" without running the suite.
 
 Push to `master`. GitHub Pages serves the repository root — there is no build
 step and no framework.
+
+## The founders' reply desk
+
+`/n/q7rk2m9xw4/` is where the founders read and answer the notes people send
+from the app (Section 3b). It is not linked from anywhere and carries
+`noindex`, but **the path is not the security**: this repo is public, so the
+page's code is too. Sign-in is a Supabase email magic link with the anon key
+(`create_user: false`, so the page can never make an account), and every read
+and write goes through `founder_list_feedback`, `founder_get_feedback`,
+`founder_reply` and `founder_set_status`, which the database refuses unless
+the signed-in account is in `public.feedback_admins`. Anyone else sees "Not
+available." Screenshots come through two-minute signed URLs, which the
+bucket's own policy only signs for founders.
+
+Everything a person typed is drawn with `textContent`; the module never parses
+markup, and `tests/feedback-desk.test.js` fails if `innerHTML` or its cousins
+appear in it or in the page.
+
+The Supabase project must list this page's URL under Auth → URL
+Configuration → Redirect URLs, or the magic link lands on the site URL
+instead.
 
 ## Keys in the page
 

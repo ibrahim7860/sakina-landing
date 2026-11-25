@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- The founders' reply desk (Section 3b). Not linked from anywhere and
+       kept out of search; the path is not the security. Every read and write
+       is refused by the database unless the signed-in account is in
+       public.feedback_admins (see src/feedback-desk.js). -->
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Sakina · Notes</title>
+  <link rel="icon" type="image/png" href="../../assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FBF7F2;
+      --emerald: #1B6B4A;
+      --emerald-light: #2a8560;
+      --gold: #C8985E;
+      --text: #1A1A1A;
+      --muted: #6B6B6B;
+      --card-bg: #FFFFFF;
+    }
+    body { font-family: 'Outfit', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
+    #desk { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { font-size: 1.6rem; font-weight: 600; color: var(--emerald); }
+    h2 { font-size: 1.35rem; font-weight: 600; margin: 16px 0 4px; }
+    h3 { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 6px; }
+    .desk-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .desk-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .desk-row { background: var(--card-bg); border: 1px solid rgba(27,107,74,0.10); border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+    .desk-row:hover, .desk-row:focus { border-color: var(--emerald-light); outline: none; }
+    .desk-pinned { border-color: var(--gold); }
+    .desk-flag { align-self: flex-start; background: var(--gold); color: #fff; font-size: 0.75rem; font-weight: 600; border-radius: 999px; padding: 1px 10px; }
+    .desk-kind { font-weight: 600; }
+    .desk-title { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .desk-meta, .desk-muted { color: var(--muted); font-size: 0.9rem; }
+    .desk-section { background: var(--card-bg); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+    .desk-words { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .desk-diag { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; font-size: 0.9rem; }
+    .desk-diag dt { color: var(--muted); }
+    .desk-diag dd { overflow-wrap: anywhere; }
+    .desk-shot { max-width: 100%; border-radius: 8px; display: block; }
+    .desk-post { border-top: 1px solid rgba(27,107,74,0.08); padding: 8px 0; }
+    .desk-post:first-of-type { border-top: 0; }
+    .desk-post-founder .desk-meta { color: var(--emerald); }
+    .desk-input { width: 100%; font: inherit; padding: 10px 12px; border: 1px solid rgba(27,107,74,0.25); border-radius: 10px; background: #fff; margin: 8px 0; }
+    .desk-button { font: inherit; font-weight: 600; background: var(--emerald); color: #fff; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
+    .desk-button[disabled] { opacity: 0.5; cursor: default; }
+    .desk-secondary { background: transparent; color: var(--emerald); border: 1px solid var(--emerald); }
+    .desk-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .desk-link { font: inherit; background: none; border: 0; color: var(--emerald); cursor: pointer; padding: 0; }
+    .desk-status { color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+    .desk-signin { max-width: 380px; margin: 15vh auto 0; display: flex; flex-direction: column; gap: 6px; }
+    .desk-closed { margin: 20vh auto 0; text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main id="desk"></main>
+  <script src="../../src/feedback-desk.js"></script>
+  <script>
+    // The anon key is public by design (it ships inside every IPA). It can
+    // sign a founder in and call the founder_* RPCs, which refuse anyone not
+    // in feedback_admins. The SERVICE-ROLE key must never appear here.
+    (function () {
+      var D = window.SakinaFeedbackDesk;
+      var root = document.getElementById('desk');
+      if (!D || !root) return;
+      D.start({
+        document: document,
+        root: root,
+        url: 'https://smhvsqrxqoehqncphjrq.supabase.co',
+        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaHZzcXJ4cW9laHFuY3BoanJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODI3MDYsImV4cCI6MjA5MTE1ODcwNn0.O3uHbbD4NhTVWJVdQFIg0OIGhfzYHRc9Tz4o2EAh05Y',
+        fetch: window.fetch.bind(window),
+        storage: window.localStorage,
+        hash: window.location.hash,
+        pageUrl: window.location.origin + window.location.pathname,
+        replaceHash: function (h) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search + h);
+        },
+        now: function () {
+          return Date.now();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
