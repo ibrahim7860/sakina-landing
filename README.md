@@ -1,7 +1,7 @@
 # Sakina — landing page
 
 The public marketing site for [Sakina](https://apps.apple.com/us/app/sakina-islamic-wellness/id6762153820),
-served by GitHub Pages at **https://ibrahim7860.github.io/sakina-landing/**.
+served by GitHub Pages at **https://sakina.page/**.
 
 This repo is public only so GitHub Pages can serve it. The app itself lives in
 the private `SamieBelal/Sakina` repo; nothing here is imported by the app at
@@ -10,7 +10,7 @@ runtime.
 ## The link to put in a bio
 
 ```
-https://ibrahim7860.github.io/sakina-landing/get/?src=instagram
+https://sakina.page/get/?src=instagram
 ```
 
 **Mind the `/get/`.** That segment is the whole point — it is the page that
@@ -29,7 +29,7 @@ own (Apple shows a campaign only once it has 5). A DM link's `r=<media id>`
 wins over its `src`, so reels keep their own campaign. Pick `src` values you
 are happy to see as campaign names: letters, digits, `_` and `-`, up to 40.
 
-**TikTok:** use `https://ibrahim7860.github.io/sakina-landing/get/?src=tiktok`,
+**TikTok:** use `https://sakina.page/get/?src=tiktok`,
 never a direct App Store link. Inside TikTok, `/get/` auto-redirects to the
 **plain listing URL** (`apps.apple.com/us/app/…/id…`), never a Campaign Link:
 Yawm's identical page (getyawm.com/get/) opens the App Store from TikTok that
